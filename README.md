@@ -6,10 +6,13 @@ Aplikasi web hemat listrik untuk microgrid Pulau Siberut, Mentawai (PLTS 75 kWp,
 Model ML memprakirakan kapan listrik surya melimpah, warga menggeser pemakaian alat berat ke **Jam Emas**,
 dan setiap aksi yang terverifikasi mendapat poin BUMDes. Dibuat untuk IT RUSH 2026, subtema Smart Small Island.
 
-| Halaman | Pengguna | Isi |
-|---|---|---|
-| `/warga` | warga (HP atau laptop) | Jam Emas, kirim foto bukti, poin dan hadiah, Alat Saya, asisten Surya |
-| `/operator` | Admin BUMDes, Teknisi PLTD | pemantauan grid, briefing AI, Dampak Iklim, verifikasi, broadcast, hadiah |
+| Peran | Akun demo | Login | Halaman | Menu |
+|---|---|---|---|---|
+| Admin BUMDes | `admin@bumdes.id` | `/login` | `/operator` | semua: Dashboard, Dampak Iklim, Kalkulator BBM, Notifikasi, Sesi Jam Emas, Verifikasi, Hadiah, Manajemen Poin, Pengaturan, Bantuan |
+| Teknisi PLTD | `teknisi@bumdes.id` | `/login` | `/operator` | sama seperti Admin, tanpa Sesi Jam Emas, Verifikasi, Hadiah, dan Manajemen Poin |
+| Warga | `warga@siberut.id` | `/warga/masuk` | `/warga` | Beranda, Alat Saya, Analisis, Hadiah, Profil, asisten Surya |
+
+Kata sandi semua akun demo: `password123`. Warga baru bisa mendaftar sendiri di `/warga/daftar`.
 
 Teknologi: Next.js 16, React 19, Firebase (Auth, Firestore, FCM), Tailwind 4, Recharts, Gemini API.
 
@@ -22,7 +25,6 @@ npm run dev                  # http://localhost:3000
 npm test                     # unit test
 ```
 
-Akun demo (kata sandi `password123`): `admin@bumdes.id`, `teknisi@bumdes.id`, `warga@siberut.id`.
 Panduan deploy ada di `DEPLOY.md`.
 
 ## Penggunaan template, library, aset, layanan, dan AI
