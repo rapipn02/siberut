@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function login() {
+      return request.auth != null;
+    }
+
+    function operatorDoc() {
+      return get(/databases/$(database)/documents/operators/$(request.auth.uid)).data;
+    }
+
+    function isOperator() {
+      return login()
+        && exists(/databases/$(database)/documents/operators/$(request.auth.uid))
+        && operatorDoc().aktif == true;
+    }
+
+    function isAdminBumdes() {
+      return isOperator() && operatorDoc().role == 'admin_bumdes';
+    }
+
+    match /operators/{uid} {
+      allow read: if login() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /system_status/{doc} {
+      allow read: if login();
+      allow write: if false;
+    }
+
+    match /power_forecasts/{doc} {
+      allow read: if login();
+      allow write: if false;
+    }
+
+    match /BUMDes_rewards/{uid} {
+      allow read: if isOperator() || (login() && request.auth.uid == uid);
+      allow create, delete: if isAdminBumdes();
+      // Poin warga hanya berubah lewat Admin SDK (verifikasi & /api/redeem).
+      allow update: if isAdminBumdes();
+
+      match /riwayat_shifts/{shiftId} {
+        allow read: if isOperator() || (login() && request.auth.uid == uid);
+        allow write: if isAdminBumdes();
+      }
+    }
+
+    match /users/{uid} {
+      allow read: if isOperator() || (login() && request.auth.uid == uid);
+      allow create, update: if login() && request.auth.uid == uid
+        && request.resource.data.role == 'WARGA';
+      allow delete: if false;
+    }
+
+    match /participation_requests/{reqId} {
+      allow read: if isOperator()
+        || (login() && resource.data.userId == request.auth.uid);
+      allow create: if login()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'PENDING'
+        && request.resource.data.photosBase64 is list
+        // Wajib serverTimestamp() — cegah klaim dengan waktu mundur.
+        && request.resource.data.timestamp == request.time;
+      allow update, delete: if false;
+    }
+
+    match /load_shift_sessions/{id} {
+      allow read: if login();
+      allow write: if isAdminBumdes();
+    }
+
+    match /reward_catalog/{id} {
+      allow read: if login();
+      allow write: if isAdminBumdes();
+    }
+
+    match /voucher_stock/{id} {
+      // Berisi kode token asli: warga TIDAK boleh membaca. Portal warga
+      // mengambil jumlah stok dari GET /api/stok-hadiah, menukar lewat /api/redeem.
+      allow read: if isOperator();
+      allow write: if isAdminBumdes();
+    }
+
+    match /redemption_history/{id} {
+      allow read: if isOperator()
+        || (login() && resource.data.user_id == request.auth.uid);
+      // Dibuat oleh /api/redeem (Admin SDK).
+      allow create, update, delete: if false;
+    }
+
+    match /broadcast_notifications/{doc} {
+      allow read: if login();
+      allow write: if false;
+    }
+
+    match /settings/{doc} {
+      allow read: if login();
+      allow write: if isAdminBumdes();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
