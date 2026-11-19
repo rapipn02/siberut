@@ -1,19 +1,25 @@
 type P = { className?: string };
 const base = "none";
 
-const stroke = (d: React.ReactNode) => ({ className }: P) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill={base}
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    {d}
-  </svg>
-);
+const stroke = (d: React.ReactNode) => {
+  function Ikon({ className }: P) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill={base}
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        aria-hidden
+      >
+        {d}
+      </svg>
+    );
+  }
+  return Ikon;
+};
 
 export const Grid = stroke(
   <>

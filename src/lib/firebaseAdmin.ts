@@ -21,9 +21,9 @@ function loadServiceAccount(): ServiceAccount | null {
   }
 
   const path = process.env.GOOGLE_APPLICATION_CREDENTIALS ?? "./serviceAccountKey.json";
-  if (existsSync(path)) {
+  if (existsSync(/*turbopackIgnore: true*/ path)) {
     try {
-      return JSON.parse(readFileSync(path, "utf8")) as ServiceAccount;
+      return JSON.parse(readFileSync(/*turbopackIgnore: true*/ path, "utf8")) as ServiceAccount;
     } catch {
       console.error(`Gagal membaca service account di ${path}.`);
       return null;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { findGreenWindow } from "./greenHours";
-import type { ForecastPoint } from "./demoData";
+import type { ForecastPoint } from "./types";
 
 const p = (jam: string, plts: number, beban: number): ForecastPoint => ({
   jam,

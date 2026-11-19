@@ -13,6 +13,7 @@ import {
 import { db, isFirebaseConfigured } from "@/lib/firebase";
 import { urutTerbaru } from "@/lib/warga";
 import type { ParticipationRequest, RedemptionHistoryItem } from "@/lib/types";
+import type { AlatWarga } from "@/lib/alatWarga";
 
 /** Saldo poin warga. Dokumen belum ada (warga baru) → 0. */
 export function useSaldo(uid: string | undefined) {
@@ -138,4 +139,28 @@ export function useStokHadiah() {
 
   const muatUlang = useCallback(() => setVersi((v) => v + 1), []);
   return { stok, loading, muatUlang };
+}
+
+/** Daftar "Alat Saya" milik warga (`users/{uid}/alat`). */
+export function useAlatSaya(uid: string | undefined) {
+  const [items, setItems] = useState<AlatWarga[]>([]);
+  const [loading, setLoading] = useState(Boolean(uid) && isFirebaseConfigured);
+
+  useEffect(() => {
+    if (!uid || !isFirebaseConfigured) return;
+    return onSnapshot(
+      collection(db, "users", uid, "alat"),
+      (snap) => {
+        setItems(
+          snap.docs
+            .map((d) => ({ id: d.id, ...(d.data() as Omit<AlatWarga, "id">) }))
+            .sort((a, b) => b.watt - a.watt),
+        );
+        setLoading(false);
+      },
+      () => setLoading(false),
+    );
+  }, [uid]);
+
+  return { items, loading };
 }

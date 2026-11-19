@@ -21,7 +21,9 @@ export default function WargaNav() {
           // Detail sesi bagian dari Beranda.
           const aktif =
             href === "/warga"
-              ? pathname === "/warga" || pathname.startsWith("/warga/sesi")
+              ? pathname === "/warga" ||
+                pathname.startsWith("/warga/sesi") ||
+                pathname.startsWith("/warga/alat")
               : pathname.startsWith(href);
           return (
             <li key={href}>

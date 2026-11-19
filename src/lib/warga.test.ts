@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Timestamp } from "firebase/firestore";
 import type { LoadShiftSession, ParticipationRequest } from "./types";
 import {
+  jamEmasHariIni,
   klaimSaya,
+  sesiBeranda,
   ringkasKontribusi,
   statusHadiah,
   stokPerHadiah,
@@ -128,6 +130,11 @@ describe("klaimSaya", () => {
     expect(klaimSaya([req("PENDING", undefined)], sesiIni)).toBe("menunggu");
   });
 
+  it("ditinjau bila PENDING sudah dinilai Mata AI dan ditahan untuk operator", () => {
+    const ditahan = { ...req("PENDING", 2000), aiAnalisis: { alasan: "foto layar" } };
+    expect(klaimSaya([ditahan as unknown as ParticipationRequest], sesiIni)).toBe("ditinjau");
+  });
+
   it("null bila hanya ada penolakan atau pengajuan sesi lain", () => {
     expect(
       klaimSaya(
@@ -197,5 +204,45 @@ describe("statusWarga", () => {
   it("status di luar enum (data ML tak terduga) jadi NORMAL, bukan crash", () => {
     expect(statusWarga(null, "UNKNOWN")).toBe("NORMAL");
     expect(statusWarga(null, undefined)).toBe("NORMAL");
+  });
+});
+
+describe("jamEmasHariIni", () => {
+  const p = (jam: string, beban: number, plts: number) => ({ jam, beban, plts, deficit: false });
+  it("dari prakiraan: rentang surplus terpanjang", () => {
+    expect(jamEmasHariIni([p("10:00", 30, 50), p("11:00", 30, 60), p("12:00", 40, 20)], {})).toEqual({
+      mulai: "10:00",
+      selesai: "12:00",
+      surplusKw: 30,
+    });
+  });
+  it("cadangan dari system_status bila prakiraan tidak punya surplus", () => {
+    expect(
+      jamEmasHariIni([p("19:00", 70, 0)], { golden_hour_start: "10:00", golden_hour_end: "14:00" }),
+    ).toEqual({ mulai: "10:00", selesai: "14:00", surplusKw: null });
+  });
+  it("null bila tidak ada keduanya", () => {
+    expect(jamEmasHariIni([], null)).toBeNull();
+  });
+});
+
+describe("sesiBeranda", () => {
+  const HARI = 86_400_000;
+  const KINI = 100 * HARI;
+  it("menampilkan sesi berjalan & mendatang, dan sesi selesai paling lama 7 hari, maks 3", () => {
+    const hasil = sesiBeranda(
+      [
+        sesi("lama", "ENDED", KINI - 90 * HARI, KINI - 90 * HARI + 3600_000), // Agustus: disembunyikan
+        sesi("kemarin", "ENDED", KINI - HARI, KINI - HARI + 3600_000),
+        sesi("aktif", "ACTIVE", KINI - 3600_000, KINI + 3600_000),
+        sesi("besok", "UPCOMING", KINI + HARI, KINI + HARI + 3600_000),
+      ],
+      KINI,
+    );
+    expect(hasil.map((s) => s.id)).toEqual(["aktif", "besok", "kemarin"]);
+  });
+
+  it("kosong bila semua sesi sudah lama berakhir", () => {
+    expect(sesiBeranda([sesi("lama", "ENDED", 10, 20)], KINI)).toEqual([]);
   });
 });

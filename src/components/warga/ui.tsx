@@ -1,38 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import type { LoadShiftSession } from "@/lib/types";
 import type { StatusWarga } from "@/lib/warga";
 import { AlertTriangle, CheckCircle, ChevronRight, Star, Sun } from "../icons";
 
-/** Jam WIB "HH:MM" — warga di Siberut, apa pun zona waktu perangkatnya. */
-export function jamWib(d: Date): string {
-  return d.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "Asia/Jakarta",
-  });
-}
+export { jamWib, tanggalWib } from "@/lib/waktu";
 
-export function tanggalWib(d: Date): string {
-  return d.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "Asia/Jakarta",
-  });
-}
-
-/** Re-render berkala, supaya status sesi/countdown ikut berjalan. */
-export function useSekarang(jedaMs = 30_000): number {
-  const [sekarang, setSekarang] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setSekarang(Date.now()), jedaMs);
-    return () => clearInterval(id);
-  }, [jedaMs]);
-  return sekarang;
-}
+export { useSekarang } from "@/hooks/useSekarang";
 
 export type { StatusWarga };
 

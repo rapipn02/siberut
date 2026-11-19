@@ -1,6 +1,13 @@
+import { cronAtauOperator, tolakAkses } from "@/lib/authServer";
+import { getAdmin } from "@/lib/firebaseAdmin";
+import { buatBriefing } from "@/lib/briefingServer";
+
 const TIMEOUT_MS = 30_000;
 
-export async function POST() {
+export async function POST(request: Request) {
+  // Memicu run model ML (mahal) — hanya cron server atau operator.
+  if (!(await cronAtauOperator(request))) return tolakAkses();
+
   const base = process.env.ISLANDGRID_API_BASE_URL;
   const key = process.env.ISLANDGRID_API_KEY;
 
@@ -33,10 +40,17 @@ export async function POST() {
     }
 
     const data = await res.json();
+
+    // Prakiraan baru → perbarui briefing Analis AI (dibatasi tiap 2 jam di dalamnya).
+    const admin = getAdmin();
+    const briefing = admin
+      ? await buatBriefing(admin.db).catch(() => "gagal" as const)
+      : null;
     return Response.json({
       ok: true,
       current_status: data?.current_status ?? null,
       records: Array.isArray(data?.forecasts) ? data.forecasts.length : null,
+      briefing,
     });
   } catch (err) {
     const aborted = err instanceof Error && err.name === "AbortError";

@@ -1,15 +1,51 @@
 import { createHash } from "node:crypto";
 import { Timestamp, FieldValue } from "firebase-admin/firestore";
 import { getAdmin } from "@/lib/firebaseAdmin";
-import { cronDiizinkan, tolakCron } from "@/lib/cronAuth";
+import { cronAtauOperator, tolakAkses } from "@/lib/authServer";
 import {
   verifikasiBanyak,
   type JendelaImbauan,
   type KlaimTersetujui,
   type PengajuanPartisipasi,
 } from "@/lib/verification";
+import { llmAktif, mintaJson } from "@/lib/llm";
+import {
+  PROMPT_ANALISIS_FOTO,
+  SKEMA_ANALISIS_FOTO,
+  estimasiKwh,
+  isAnalisisFoto,
+  keputusanAkhir,
+  type AnalisisFoto,
+} from "@/lib/mataAi";
+import { dataUrlFoto } from "@/lib/photo";
 
 const MAKS_PER_JALAN = 50;
+/** Batas panggilan Gemini per jalan cron — sisa antre ke jalan berikutnya (kuota harian terbatas). */
+const MAKS_AI_PER_JALAN = 5;
+const MAKS_FOTO_AI = 3;
+const BATAS_DETIK_AI = 30;
+
+async function analisisFoto(fotos: unknown): Promise<AnalisisFoto | null> {
+  const gambar = (Array.isArray(fotos) ? fotos : [])
+    .map(dataUrlFoto)
+    .filter((u): u is string => Boolean(u))
+    .slice(0, MAKS_FOTO_AI);
+  if (gambar.length === 0) return null;
+  return mintaJson({
+    pesan: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: PROMPT_ANALISIS_FOTO },
+          ...gambar.map((url) => ({ type: "image_url" as const, image_url: { url } })),
+        ],
+      },
+    ],
+    skema: SKEMA_ANALISIS_FOTO,
+    validasi: isAnalisisFoto,
+    batasDetik: BATAS_DETIK_AI,
+  });
+}
 
 function sidikFoto(foto: unknown): string[] {
   if (!Array.isArray(foto)) return [];
@@ -19,8 +55,7 @@ function sidikFoto(foto: unknown): string[] {
 }
 
 export async function POST(request: Request) {
-  const dariDashboard = request.headers.get("x-from-dashboard") === "1";
-  if (!dariDashboard && !cronDiizinkan(request)) return tolakCron();
+  if (!(await cronAtauOperator(request, true))) return tolakAkses();
 
   const admin = getAdmin();
   if (!admin) {
@@ -39,7 +74,11 @@ export async function POST(request: Request) {
       .limit(MAKS_PER_JALAN)
       .get();
 
-    if (menungguSnap.empty) {
+    // Sudah dinilai AI & menunggu keputusan operator → jangan dianalisis ulang.
+    // ponytail: >50 pengajuan tertahan bisa menyumbat antrean; tambah field status terpisah bila itu terjadi.
+    const menunggu = menungguSnap.docs.filter((d) => !d.data().aiAnalisis);
+
+    if (menunggu.length === 0) {
       return Response.json({
         ok: true,
         diproses: 0,
@@ -78,7 +117,8 @@ export async function POST(request: Request) {
       return Array.isArray(v.photoHashes) ? (v.photoHashes as string[]) : sidikFoto(v.photosBase64);
     });
 
-    const pengajuan: PengajuanPartisipasi[] = menungguSnap.docs.map((d) => {
+    const fotoPerId = new Map(menunggu.map((d) => [d.id, d.data().photosBase64]));
+    const pengajuan: PengajuanPartisipasi[] = menunggu.map((d) => {
       const v = d.data();
       return {
         id: d.id,
@@ -100,11 +140,39 @@ export async function POST(request: Request) {
 
     let disetujui = 0;
     let ditolak = 0;
+    let ditinjau = 0;
+    let aiDipakai = 0;
+    let tertunda = 0;
+    const pakaiAi = llmAktif();
 
-    for (const { pengajuan: p, hasil: h } of hasil) {
+    for (const { pengajuan: p, hasil: aturan } of hasil) {
       const reqRef = db.collection("participation_requests").doc(p.id);
 
-      if (h.status === "APPROVED") {
+      // Mata AI hanya untuk yang lolos aturan — hemat kuota.
+      let ai: AnalisisFoto | null = null;
+      if (aturan.status === "APPROVED" && pakaiAi) {
+        if (aiDipakai >= MAKS_AI_PER_JALAN) {
+          tertunda++;
+          continue; // tetap PENDING, dinilai di jalan cron berikutnya
+        }
+        aiDipakai++;
+        ai = await analisisFoto(fotoPerId.get(p.id));
+      }
+      const h = keputusanAkhir(aturan, ai);
+      const jejakAi = ai
+        ? { aiAnalisis: { ...ai, dianalisisPada: Timestamp.fromMillis(sekarang) } }
+        : {};
+
+      if (h.status === "PENDING") {
+        await reqRef.update({
+          ...jejakAi,
+          windowId: h.windowId,
+          verificationReason: h.reason,
+          verificationCode: h.reasonCode,
+          photoHashes: p.hashFoto ?? [],
+        });
+        ditinjau++;
+      } else if (h.status === "APPROVED") {
         await db.runTransaction(async (tx) => {
           const kini = await tx.get(reqRef);
           if (!kini.exists || kini.data()?.status !== "PENDING") return;
@@ -117,6 +185,8 @@ export async function POST(request: Request) {
             verificationReason: h.reason,
             verificationCode: h.reasonCode,
             photoHashes: p.hashFoto ?? [],
+            ...jejakAi,
+            estimasiKwh: estimasiKwh(ai),
           });
           // user_id + nama_warga ikut ditulis: warga yang daftar lewat portal
           // belum punya dokumen poin, dan peringkat operator butuh namanya.
@@ -148,9 +218,12 @@ export async function POST(request: Request) {
 
     return Response.json({
       ok: true,
-      diproses: hasil.length,
+      diproses: hasil.length - tertunda,
       disetujui,
       ditolak,
+      ditinjau,
+      ai_dipakai: aiDipakai,
+      tertunda,
     });
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Gagal";

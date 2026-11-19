@@ -1,4 +1,4 @@
-import type { ForecastPoint } from "./demoData";
+import type { ForecastPoint } from "./types";
 
 export interface GreenWindow {
   mulai: string;

@@ -12,19 +12,13 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "@/lib/firebase";
-import {
-  buildDemoForecasts,
-  demoWeather,
-  type ForecastPoint,
-  type WeatherNow,
-} from "@/lib/demoData";
-import type { PowerForecast } from "@/lib/types";
+import type { CuacaKini, ForecastPoint, PowerForecast } from "@/lib/types";
+import { jamWib } from "@/lib/waktu";
 
 export function usePowerForecasts() {
-  const [points, setPoints] = useState<ForecastPoint[]>(
-    isFirebaseConfigured ? [] : buildDemoForecasts(),
-  );
-  const [weather, setWeather] = useState<WeatherNow>(demoWeather);
+  const [points, setPoints] = useState<ForecastPoint[]>([]);
+  // null sampai data asli datang — jangan tampilkan angka cuaca karangan.
+  const [weather, setWeather] = useState<CuacaKini | null>(null);
   const [loading, setLoading] = useState(isFirebaseConfigured);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,7 +44,7 @@ export function usePowerForecasts() {
           docs.map((d) => {
             const date = d.timestamp?.toDate?.() ?? new Date();
             return {
-              jam: `${String(date.getHours()).padStart(2, "0")}:00`,
+              jam: jamWib(date), // WIB, apa pun zona perangkat operator
               beban: d.projected_load_kw,
               plts: d.predicted_plts_kw,
               deficit: d.deficit_flag,
@@ -61,9 +55,9 @@ export function usePowerForecasts() {
         if (docs.length) {
           const cur = docs[0];
           setWeather({
+            jam: jamWib(cur.timestamp?.toDate?.() ?? new Date()),
             cloud: cur.cloud_cover_percent,
             ghi: cur.ghi_radiation,
-            suhu: 29,
           });
         }
         setLoading(false);

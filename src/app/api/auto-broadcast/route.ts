@@ -8,36 +8,13 @@ import {
 } from "@/lib/gridThresholds";
 import { findGreenWindow } from "@/lib/greenHours";
 import { rataRataPltsRentang } from "@/lib/kapasitasSesi";
+import { jamWib, tanggalPanjangWib } from "@/lib/waktu";
+import { isBriefingAi } from "@/lib/analisAi";
+
+/** Draf imbauan Analis AI dipakai bila dibuat ≤ 6 jam lalu; selain itu templat. */
+const UMUR_DRAF_AI_MS = 6 * 3600_000;
 
 const DURASI_JENDELA_JAM = 4;
-
-function jamWib(d: Date): string {
-  const bagian = new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "Asia/Jakarta",
-  }).formatToParts(d);
-  const jam = bagian.find((p) => p.type === "hour")?.value ?? "00";
-  const menit = bagian.find((p) => p.type === "minute")?.value ?? "00";
-  return `${jam}:${menit}`;
-}
-
-const BULAN_ID = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-
-function tanggalId(d: Date): string {
-  const bagian = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "numeric",
-    year: "numeric",
-    timeZone: "Asia/Jakarta",
-  }).formatToParts(d);
-  const ambil = (t: string) => bagian.find((p) => p.type === t)?.value ?? "";
-  return `${Number(ambil("day"))} ${BULAN_ID[Number(ambil("month")) - 1]} ${ambil("year")}`;
-}
 
 export async function POST(request: Request) {
   if (!cronDiizinkan(request)) return tolakCron();
@@ -123,13 +100,19 @@ export async function POST(request: Request) {
       });
     }
 
-    const pesan = susunPesanOtomatis(hasil);
+    const briefing = (await db.collection("ai_briefing").doc("terbaru").get()).data();
+    const drafSegar =
+      isBriefingAi(briefing?.ai) &&
+      sekarang - (briefing?.aiDibuat?.toMillis?.() ?? 0) < UMUR_DRAF_AI_MS;
+    const pesan = drafSegar
+      ? { title: briefing!.ai.drafImbauan.judul, message: briefing!.ai.drafImbauan.isi }
+      : susunPesanOtomatis(hasil);
 
     await messaging.send({
       topic: FCM_TOPIC,
       notification: { title: pesan.title, body: pesan.message },
       android: { priority: "high" },
-      data: { type: "auto_alert" },
+      data: { type: "auto_alert", sumber: drafSegar ? "analis_ai" : "templat" },
     });
 
     const batch = db.batch();
@@ -151,7 +134,7 @@ export async function POST(request: Request) {
       ) ?? 0;
     const sesiRef = db.collection("load_shift_sessions").doc();
     batch.set(sesiRef, {
-      date: tanggalId(mulai),
+      date: tanggalPanjangWib(mulai),
       startTime: jamWib(mulai),
       endTime: jamWib(selesai),
       status: "ACTIVE",

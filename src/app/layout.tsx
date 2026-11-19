@@ -9,8 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "IslandGrid AI — Dashboard Operator",
-  description: "Pantau kesetimbangan daya Pulau Siberut secara real-time.",
+  title: "ListrikSiberut · IslandGrid AI",
+  description:
+    "Prediksi AI listrik surya Pulau Siberut, Jam Emas untuk warga, verifikasi Mata AI, dan poin BUMDes.",
 };
 
 export default function RootLayout({

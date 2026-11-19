@@ -15,6 +15,20 @@ function initials(nama: string) {
     .toUpperCase();
 }
 
+/** Tujuan "lompat ke halaman" — sama dengan menu Sidebar. */
+const HALAMAN = [
+  { label: "Dashboard", href: "/operator" },
+  { label: "Dampak Iklim", href: "/operator/dampak" },
+  { label: "Kalkulator BBM", href: "/operator/kalkulator-bbm" },
+  { label: "Notifikasi & Broadcast", href: "/operator/notifikasi" },
+  { label: "Sesi Jam Emas", href: "/operator/sesi" },
+  { label: "Verifikasi Partisipasi", href: "/operator/verifikasi" },
+  { label: "Hadiah & Stok Voucher", href: "/operator/hadiah" },
+  { label: "Manajemen Poin", href: "/operator/poin" },
+  { label: "Pengaturan", href: "/operator/pengaturan" },
+  { label: "Bantuan", href: "/operator/bantuan" },
+];
+
 export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const router = useRouter();
   const { session } = useAuth();
@@ -46,16 +60,33 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         <Menu className="w-5 h-5" />
       </button>
 
-      <div className="relative flex-1 max-w-md hidden sm:block">
+      <form
+        className="relative flex-1 max-w-md hidden sm:block"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const input = e.currentTarget.elements.namedItem("lompat") as HTMLInputElement;
+          const q = input.value.trim().toLowerCase();
+          const tujuan = HALAMAN.find((h) => h.label.toLowerCase().includes(q));
+          if (q && tujuan) {
+            router.push(tujuan.href);
+            input.value = "";
+          }
+        }}
+      >
         <Search className="absolute left-3 top-2.5 w-[18px] h-[18px] text-slate-400" />
         <input
-          placeholder="Cari warga, laporan, jadwal…"
-          className="w-full pl-10 pr-14 py-2 rounded-full bg-slate-100 border border-transparent focus:bg-white focus:border-slate-300 focus:outline-none text-sm"
+          name="lompat"
+          list="daftar-halaman"
+          placeholder="Lompat ke halaman…"
+          aria-label="Lompat ke halaman"
+          className="w-full pl-10 pr-4 py-2 rounded-full bg-slate-100 border border-transparent focus:bg-white focus:border-slate-300 focus:outline-none text-sm"
         />
-        <span className="absolute right-3 top-2 text-[11px] text-slate-400 border border-slate-300 rounded px-1.5 py-0.5 hidden md:inline">
-          ⌘F
-        </span>
-      </div>
+        <datalist id="daftar-halaman">
+          {HALAMAN.map((h) => (
+            <option key={h.href} value={h.label} />
+          ))}
+        </datalist>
+      </form>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
 
@@ -107,7 +138,7 @@ export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
               <button
                 onClick={() => {
                   setOpen(false);
-                  router.push("/notifikasi");
+                  router.push("/operator/notifikasi");
                 }}
                 className="w-full py-2.5 text-sm font-semibold text-brand-700 hover:bg-brand-50 border-t border-slate-100"
               >

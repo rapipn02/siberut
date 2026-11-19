@@ -1,5 +1,6 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { getAdmin } from "@/lib/firebaseAdmin";
+import { uidDariToken } from "@/lib/authServer";
 
 export async function POST(request: Request) {
   const admin = getAdmin();
@@ -9,25 +10,10 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
-  const { db, app } = admin;
+  const { db } = admin;
 
-  const authHeader = request.headers.get("authorization") ?? "";
-  const idToken = authHeader.startsWith("Bearer ")
-    ? authHeader.slice(7).trim()
-    : "";
-  if (!idToken) {
-    return Response.json(
-      { ok: false, error: "Token tidak disertakan." },
-      { status: 401 },
-    );
-  }
-
-  let uid: string;
-  try {
-    const { getAuth } = await import("firebase-admin/auth");
-    const decoded = await getAuth(app).verifyIdToken(idToken);
-    uid = decoded.uid;
-  } catch {
+  const uid = await uidDariToken(request);
+  if (!uid) {
     return Response.json(
       { ok: false, error: "Token tidak sah atau kedaluwarsa." },
       { status: 401 },

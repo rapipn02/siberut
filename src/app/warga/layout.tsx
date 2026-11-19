@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { WargaAuthProvider } from "@/components/WargaAuthProvider";
 
 export const metadata: Metadata = {
-  title: "ListrikSiberut — Portal Warga",
+  title: "ListrikSiberut · Portal Warga",
   description:
     "Jam Emas listrik surya, klaim poin BUMDes, dan tukar hadiah untuk warga Pulau Siberut.",
 };

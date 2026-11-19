@@ -3,6 +3,8 @@ import type {
   ParticipationRequest,
   SessionStatus,
 } from "./types";
+import type { ForecastPoint } from "./types";
+import { findGreenWindow } from "./greenHours";
 
 export interface StatusKirim {
   boleh: boolean;
@@ -68,18 +70,20 @@ export function urutTerbaru<T>(
 export function klaimSaya(
   riwayat: ParticipationRequest[],
   sesi: LoadShiftSession,
-): "disetujui" | "menunggu" | null {
+): "disetujui" | "menunggu" | "ditinjau" | null {
   if (riwayat.some((r) => r.status === "APPROVED" && r.windowId === sesi.id)) {
     return "disetujui";
   }
   const mulai = sesi.startAt?.toMillis?.() ?? 0;
   const selesai = sesi.endAt?.toMillis?.() ?? 0;
-  const menunggu = riwayat.some((r) => {
+  const pending = riwayat.find((r) => {
     if (r.status !== "PENDING") return false;
     const t = r.timestamp?.toMillis?.();
     return t === undefined || (t >= mulai && t <= selesai);
   });
-  return menunggu ? "menunggu" : null;
+  if (!pending) return null;
+  // Sudah dinilai Mata AI tapi ditahan → menunggu keputusan operator.
+  return pending.aiAnalisis ? "ditinjau" : "menunggu";
 }
 
 export type StatusHadiah = "bisa" | "kurang-poin" | "habis";
@@ -141,4 +145,41 @@ export function statusWarga(
   return statusGrid && STATUS_GRID_SAH.has(statusGrid)
     ? (statusGrid as StatusWarga)
     : "NORMAL";
+}
+
+export interface JamEmas {
+  mulai: string;
+  selesai: string;
+  /** Surplus surya maksimum (kW); null bila dari cadangan system_status. */
+  surplusKw: number | null;
+}
+
+/** Jam Emas 24 jam ke depan dari prakiraan; cadangan `golden_hour_*` di system_status. */
+export function jamEmasHariIni(
+  titik: ForecastPoint[],
+  status: { golden_hour_start?: string; golden_hour_end?: string } | null,
+): JamEmas | null {
+  const w = findGreenWindow(titik.slice(0, 25));
+  if (w) return { mulai: w.mulai, selesai: w.selesai, surplusKw: w.surplusKw };
+  if (status?.golden_hour_start && status.golden_hour_end) {
+    return { mulai: status.golden_hour_start, selesai: status.golden_hour_end, surplusKw: null };
+  }
+  return null;
+}
+
+const MAKS_HARI_SESI_SELESAI = 7;
+const MAKS_SESI_SELESAI = 3;
+
+/**
+ * Sesi untuk Beranda warga: yang berjalan dan mendatang, lalu sesi selesai yang
+ * berakhir ≤ 7 hari lalu (maks 3). Sesi berbulan-bulan lalu tidak relevan bagi warga.
+ */
+export function sesiBeranda(sesi: LoadShiftSession[], sekarangMs: number): LoadShiftSession[] {
+  const batas = sekarangMs - MAKS_HARI_SESI_SELESAI * 86_400_000;
+  const urut = urutSesiWarga(sesi);
+  const berjalan = urut.filter((s) => s.status !== "ENDED");
+  const baruSelesai = urut
+    .filter((s) => s.status === "ENDED" && (s.endAt?.toMillis?.() ?? 0) >= batas)
+    .slice(0, MAKS_SESI_SELESAI);
+  return [...berjalan, ...baruSelesai];
 }

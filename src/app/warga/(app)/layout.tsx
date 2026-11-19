@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWarga } from "@/components/WargaAuthProvider";
 import WargaNav from "@/components/WargaNav";
+import PanelAsisten from "@/components/PanelAsisten";
 import { useNotifikasiWarga } from "@/hooks/useNotifikasiBrowser";
 import { Bell, X, Zap } from "@/components/icons";
 
@@ -29,6 +30,14 @@ export default function WargaAppLayout({ children }: { children: React.ReactNode
     <>
       <main className="pb-24">{children}</main>
       <Pemberitahuan />
+      <PanelAsisten
+        peran="warga"
+        saran={[
+          "Kapan sebaiknya saya nyuci hari ini?",
+          "Poin saya cukup untuk tukar apa?",
+          "Gimana kondisi listrik desa sekarang?",
+        ]}
+      />
       <WargaNav />
     </>
   );

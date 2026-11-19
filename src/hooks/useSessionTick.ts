@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { fetchBertoken } from "@/lib/apiKlien";
 
 const JEDA_MS = 60_000;
 
@@ -8,10 +9,7 @@ export function useSessionTick() {
   useEffect(() => {
     const jalankan = () => {
       if (document.hidden) return;
-      fetch("/api/sessions/tick", {
-        method: "POST",
-        headers: { "x-from-dashboard": "1" },
-      }).catch(() => {});
+      fetchBertoken("/api/sessions/tick", { method: "POST" }).catch(() => {});
     };
     const awal = setTimeout(jalankan, 0);
     const id = setInterval(jalankan, JEDA_MS);
@@ -28,7 +26,7 @@ export function useForecastRefresh() {
   useEffect(() => {
     const jalankan = () => {
       if (document.hidden) return;
-      fetch("/api/forecast/refresh", { method: "POST" }).catch(() => {});
+      fetchBertoken("/api/forecast/refresh", { method: "POST" }).catch(() => {});
     };
     const awal = setTimeout(jalankan, 0);
     const id = setInterval(jalankan, JEDA_PRAKIRAAN_MS);

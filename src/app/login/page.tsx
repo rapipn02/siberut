@@ -29,7 +29,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && session) router.replace("/");
+    if (!loading && session) router.replace("/operator");
   }, [loading, session, router]);
 
   async function handleLogin(e: React.FormEvent) {
@@ -38,7 +38,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await loginReal(email, password);
-      router.replace("/");
+      router.replace("/operator");
     } catch (err) {
       setError(pesanRamah(err));
     } finally {
@@ -76,7 +76,7 @@ export default function LoginPage() {
 
         {!isFirebaseConfigured && (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
-            Firebase belum dikonfigurasi — login tidak akan berhasil. Isi
+            Firebase belum dikonfigurasi, jadi login tidak akan berhasil. Isi
             <code className="mx-1 px-1 bg-amber-100 rounded">.env.local</code>
             terlebih dahulu.
           </p>
@@ -117,7 +117,7 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-5 border-t border-slate-200">
           <p className="text-[11px] font-semibold tracking-wide text-slate-400 mb-2">
-            AKUN OPERATOR — KLIK UNTUK MENGISI
+            Akun operator (klik untuk mengisi)
           </p>
           {AKUN.map((a) => (
             <button

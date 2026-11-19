@@ -83,7 +83,7 @@ export default function FormAkunWarga({ awal }: { awal: "masuk" | "daftar" }) {
 
       {!isFirebaseConfigured && (
         <p className="mt-6 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-          Firebase belum dikonfigurasi — isi <code>.env.local</code> dulu.
+          Firebase belum dikonfigurasi. Isi <code>.env.local</code> dulu.
         </p>
       )}
 

@@ -45,3 +45,42 @@ export function hitungHemat(kepatuhanPersen: number): HasilHemat {
     pohonTahun,
   };
 }
+
+/** Penghematan nyata dari kWh yang sudah digeser warga (bukan proyeksi slider). */
+export function dampakKwh(kwh: number) {
+  const k = Math.max(0, kwh);
+  const liter = Math.round(k * FUEL.literPerKwhGenset * 10) / 10;
+  return {
+    kwh: Math.round(k * 100) / 100,
+    liter,
+    rupiah: Math.round(liter * FUEL.hargaSolarPerLiter),
+    co2Kg: Math.round(liter * FUEL.co2PerLiter),
+  };
+}
+
+export interface RingkasanDampak {
+  kwh7Hari: number;
+  aksi7Hari: number;
+  kwhTotal: number;
+  aksiTotal: number;
+}
+
+/** Ringkas pengajuan yang disetujui. `estimasiKwh` kosong = disetujui tanpa Mata AI. */
+export function ringkasDampak(
+  disetujui: Array<{ estimasiKwh?: number; waktuMs?: number }>,
+  sekarangMs: number,
+): RingkasanDampak {
+  const batas7 = sekarangMs - 7 * 86_400_000;
+  const r = { kwh7Hari: 0, aksi7Hari: 0, kwhTotal: 0, aksiTotal: 0 };
+  for (const d of disetujui) {
+    const kwh = d.estimasiKwh ?? 0;
+    r.kwhTotal += kwh;
+    r.aksiTotal++;
+    if ((d.waktuMs ?? 0) >= batas7) {
+      r.kwh7Hari += kwh;
+      r.aksi7Hari++;
+    }
+  }
+  const bulat = (n: number) => Math.round(n * 100) / 100;
+  return { ...r, kwh7Hari: bulat(r.kwh7Hari), kwhTotal: bulat(r.kwhTotal) };
+}

@@ -2,13 +2,15 @@
 
 import { useMemo } from "react";
 import { useWarga } from "@/components/WargaAuthProvider";
-import { useSaldo } from "@/hooks/useWargaData";
+import { useAlatSaya, useSaldo } from "@/hooks/useWargaData";
+import Link from "next/link";
 import { useSystemStatus } from "@/hooks/useSystemStatus";
 import { usePowerForecasts } from "@/hooks/usePowerForecasts";
 import { useSessions } from "@/hooks/useSessions";
 import { useBroadcasts, waktuRelatif } from "@/hooks/useBroadcasts";
-import { findGreenWindow } from "@/lib/greenHours";
-import { statusWarga, titikTerdekat, urutSesiWarga } from "@/lib/warga";
+import { jamEmasHariIni, sesiBeranda, statusWarga, titikTerdekat } from "@/lib/warga";
+import { rencanaHemat } from "@/lib/alatWarga";
+import { idr } from "@/lib/format";
 import {
   INFO_STATUS,
   KartuPoin,
@@ -19,10 +21,9 @@ import {
   useSekarang,
   type StatusWarga,
 } from "@/components/warga/ui";
-import { Bell, Sun } from "@/components/icons";
+import { Bell, ChevronRight, Sun, Zap } from "@/components/icons";
 
 const BASI_MS = 4 * 3600_000; // ML memperbarui tiap 3 jam
-const MAKS_SESI_SELESAI = 3;
 
 export default function BerandaWargaPage() {
   const { warga } = useWarga();
@@ -31,6 +32,7 @@ export default function BerandaWargaPage() {
   const { points } = usePowerForecasts();
   const { items: semuaSesi, loading: memuatSesi } = useSessions(30);
   const { items: imbauan } = useBroadcasts(3);
+  const { items: alat } = useAlatSaya(warga?.uid);
   const sekarang = useSekarang();
 
   // Titik prakiraan terdekat dengan jam sekarang → surplus atau ikut status grid.
@@ -48,21 +50,10 @@ export default function BerandaWargaPage() {
   const basi = !diperbarui || sekarang - diperbarui.getTime() > BASI_MS;
 
   // Jam Emas dari prakiraan 24 jam ke depan; cadangan dari system_status.
-  const jamEmas = useMemo(() => {
-    const w = findGreenWindow(points.slice(0, 25));
-    if (w) return { teks: `${w.mulai} – ${w.selesai}`, surplus: w.surplusKw };
-    if (status?.golden_hour_start && status.golden_hour_end) {
-      return { teks: `${status.golden_hour_start} – ${status.golden_hour_end}`, surplus: null };
-    }
-    return null;
-  }, [points, status]);
+  const jamEmas = useMemo(() => jamEmasHariIni(points, status), [points, status]);
+  const rencana = useMemo(() => rencanaHemat(alat, jamEmas), [alat, jamEmas]);
 
-  const sesi = useMemo(() => {
-    const urut = urutSesiWarga(semuaSesi);
-    const berjalan = urut.filter((s) => s.status !== "ENDED");
-    const selesai = urut.filter((s) => s.status === "ENDED").slice(0, MAKS_SESI_SELESAI);
-    return [...berjalan, ...selesai];
-  }, [semuaSesi]);
+  const sesi = useMemo(() => sesiBeranda(semuaSesi, sekarang), [semuaSesi, sekarang]);
 
   const nama = warga?.nama ?? "";
 
@@ -117,11 +108,11 @@ export default function BerandaWargaPage() {
           </p>
           {jamEmas ? (
             <>
-              <p className="mt-2 text-[28px] font-black tracking-wide">{jamEmas.teks}</p>
+              <p className="mt-2 text-[28px] font-black tracking-wide">{jamEmas.mulai} – {jamEmas.selesai}</p>
               <p className="mt-1 text-xs text-slate-300">
                 Waktu terbaik menyalakan pompa air, setrika & mesin es.
-                {jamEmas.surplus !== null && (
-                  <> Surplus surya ±{jamEmas.surplus} kW.</>
+                {jamEmas.surplusKw !== null && (
+                  <> Surplus surya ±{jamEmas.surplusKw} kW.</>
                 )}
               </p>
             </>
@@ -141,12 +132,47 @@ export default function BerandaWargaPage() {
             {memuatSesi ? (
               <div className="h-28 rounded-[20px] bg-slate-200/70 animate-pulse" />
             ) : sesi.length === 0 ? (
-              <Kosong>Belum ada jadwal sesi yang terdaftar.</Kosong>
+              <Kosong>
+                Belum ada sesi Jam Emas minggu ini. Sesi dibuka otomatis saat listrik surya
+                diprediksi melimpah, dan Anda akan mendapat pemberitahuan.
+              </Kosong>
             ) : (
               sesi.map((s) => <KartuSesi key={s.id} sesi={s} />)
             )}
           </div>
         </section>
+
+        <Link
+          href="/warga/alat"
+          className="flex items-center gap-4 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white">
+            <Zap className="h-6 w-6" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-extrabold tracking-wide text-violet-700">
+              RENCANA HEMAT HARI INI
+            </span>
+            {rencana.jadwal.length > 0 ? (
+              <>
+                <span className="block font-black">
+                  {rencana.jadwal.length} alat di Jam Emas · {rencana.kwh} kWh
+                </span>
+                <span className="block text-xs text-slate-500">
+                  Desa hemat ±{rencana.liter} L solar ({idr(rencana.rupiah)})
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="block font-black">Pindai label alat listrik Anda</span>
+                <span className="block text-xs text-slate-500">
+                  AI membaca daya alat, lalu menyusun jadwal pakai terbaik.
+                </span>
+              </>
+            )}
+          </span>
+          <ChevronRight className="h-5 w-5 text-violet-400" />
+        </Link>
 
         <KartuPoin poin={poin} />
 

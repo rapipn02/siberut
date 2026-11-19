@@ -7,15 +7,11 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { BULAN_ID } from "./waktu";
 import type { SessionStatus } from "./types";
 
-const BULAN = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
-
 export function formatTanggalId(d: Date): string {
-  return `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
+  return `${d.getDate()} ${BULAN_ID[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export function gabungWaktu(tanggal: Date, jam: string): Date {

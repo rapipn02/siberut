@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, orderBy, query, limit } from "firebase/firestore";
 import { db, isFirebaseConfigured } from "@/lib/firebase";
-import { demoRewards } from "@/lib/demoData";
-import { addWarga } from "@/lib/rewardActions";
 import type {
   BUMDesReward,
   VoucherStock,
@@ -13,9 +11,7 @@ import type {
 } from "@/lib/types";
 
 export function useRewards() {
-  const [rewards, setRewards] = useState<BUMDesReward[]>(
-    isFirebaseConfigured ? [] : demoRewards,
-  );
+  const [rewards, setRewards] = useState<BUMDesReward[]>([]);
   const [loading, setLoading] = useState(isFirebaseConfigured);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,25 +40,7 @@ export function useRewards() {
     return unsub;
   }, []);
 
-  async function addReward(nama: string, nomorHp: string) {
-    if (isFirebaseConfigured) {
-      await addWarga(nama, nomorHp);
-    } else {
-      setRewards((prev) => [
-        ...prev,
-        {
-          id: `demo-${Date.now()}`,
-          user_id: `demo-${Date.now()}`,
-          nama_warga: nama,
-          nomor_hp: nomorHp,
-          total_poin: 0,
-          status: "Baru",
-        },
-      ]);
-    }
-  }
-
-  return { rewards, loading, error, addReward };
+  return { rewards, loading, error };
 }
 
 export function useRewardCatalog() {

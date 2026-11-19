@@ -48,6 +48,17 @@ service cloud.firestore {
       }
     }
 
+    // Daftar "Alat Saya" warga (portal) — hanya pemiliknya.
+    match /users/{uid}/alat/{alatId} {
+      allow read, delete: if login() && request.auth.uid == uid;
+      allow create, update: if login() && request.auth.uid == uid
+        && request.resource.data.nama is string
+        && request.resource.data.nama.size() <= 60
+        && request.resource.data.watt is number
+        && request.resource.data.watt > 0
+        && request.resource.data.watt <= 5000;
+    }
+
     match /users/{uid} {
       allow read: if isOperator() || (login() && request.auth.uid == uid);
       allow create, update: if login() && request.auth.uid == uid
@@ -93,6 +104,22 @@ service cloud.firestore {
 
     match /broadcast_notifications/{doc} {
       allow read: if login();
+      allow write: if false;
+    }
+
+    // Ringkasan dampak & briefing AI — ditulis server (Admin SDK), dibaca semua yang login.
+    match /statistik_harian/{tanggal} {
+      allow read: if login();
+      allow write: if false;
+    }
+
+    match /statistik/{doc} {
+      allow read: if login();
+      allow write: if false;
+    }
+
+    match /ai_briefing/{doc} {
+      allow read: if isOperator();
       allow write: if false;
     }
 

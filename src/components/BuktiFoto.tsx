@@ -76,7 +76,7 @@ export function BuktiFoto({ foto, nama }: Props) {
               key={i}
               type="button"
               onClick={() => setBuka(i)}
-              title={`Foto ${i + 1} · ${ukuranKb(b64)} KB — klik untuk perbesar`}
+              title={`Foto ${i + 1} · ${ukuranKb(b64)} KB, klik untuk perbesar`}
               className="relative w-16 h-16 rounded-lg overflow-hidden bg-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500 group"
             >
               <img

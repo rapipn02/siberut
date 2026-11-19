@@ -101,6 +101,10 @@ export default function DetailSesiPage() {
           <Info>
             Bukti Anda sedang diverifikasi. Poin masuk otomatis dalam ±5 menit.
           </Info>
+        ) : klaim === "ditinjau" ? (
+          <Info>
+            Foto Anda sedang ditinjau petugas BUMDes. Hasilnya muncul di Profil.
+          </Info>
         ) : kirim.boleh ? (
           <FormBukti
             sesiId={sesi.id}
@@ -231,7 +235,7 @@ function FormBukti({ sesiId, poin, rentang }: { sesiId: string; poin: number; re
           </div>
           <p className={`mt-1 text-[11px] ${muat ? "text-slate-400" : "text-red-500 font-medium"}`}>
             {fotos.length}/{MAKS_FOTO} foto · {totalKb} KB
-            {!muat && ` — melebihi batas ${BATAS_FOTO_KB} KB, hapus salah satu foto`}
+            {!muat && `, melebihi batas ${BATAS_FOTO_KB} KB. Hapus salah satu foto.`}
           </p>
         </div>
       )}

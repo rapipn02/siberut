@@ -10,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { ForecastPoint } from "@/lib/demoData";
+import type { ForecastPoint } from "@/lib/types";
 
 export default function PowerBalanceChart({
   points,

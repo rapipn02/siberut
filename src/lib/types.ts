@@ -1,4 +1,5 @@
 import type { Timestamp } from "firebase/firestore";
+import type { AnalisisFoto } from "./mataAi";
 
 export type GridStatus = "NORMAL" | "WARNING" | "ALERT";
 
@@ -43,27 +44,10 @@ export interface Operator {
 export interface BUMDesReward {
   id: string;
   user_id: string;
-  nama_warga: string;
-  nomor_hp: string;
+  /** Bisa kosong untuk dokumen yang dibuat mesin verifikasi sebelum nama tercatat. */
+  nama_warga?: string;
+  nomor_hp?: string;
   total_poin: number;
-  status?: "Aktif" | "Baru" | "Pending" | "Nonaktif";
-}
-
-export interface RiwayatShift {
-  id: string;
-  jam_shift: string;
-  poin_diperoleh: number;
-  status_klaim: boolean;
-  timestamp: Timestamp;
-}
-
-export interface RedemptionRequest {
-  id: string;
-  uid: string;
-  nama_warga: string;
-  hadiah: string;
-  poin: number;
-  status: "pending" | "approved" | "rejected";
 }
 
 export interface BroadcastNotification {
@@ -90,6 +74,8 @@ export interface LoadShiftSession {
 
   poin_per_partisipasi?: number;
   dibuat_oleh?: string;
+  /** Total kWh digeser peserta yang disetujui (perkiraan Mata AI). */
+  kwhTergeser?: number;
 
   startAt?: Timestamp;
   endAt?: Timestamp;
@@ -119,6 +105,10 @@ export interface ParticipationRequest {
   verifiedAt?: Timestamp;
   verificationReason?: string;
   verificationCode?: string;
+  /** Hasil Mata AI (Gemini Vision) — ada bila foto sudah dinilai. */
+  aiAnalisis?: AnalisisFoto & { dianalisisPada?: Timestamp };
+  /** Perkiraan kWh yang digeser ke Jam Emas (dari Mata AI), hanya bila disetujui. */
+  estimasiKwh?: number;
   photoHashes?: string[];
 }
 
@@ -153,4 +143,20 @@ export interface RedemptionHistoryItem {
   biaya_poin: number;
   kode_diberikan: string;
   timestamp: Timestamp;
+}
+
+/** Satu titik prakiraan per jam (dari `power_forecasts`), jam dalam WIB. */
+export interface ForecastPoint {
+  jam: string;
+  beban: number;
+  plts: number;
+  deficit: boolean;
+  waktuMs?: number;
+}
+
+/** Cuaca jam berjalan dari prakiraan ML. */
+export interface CuacaKini {
+  jam: string;
+  cloud: number;
+  ghi: number;
 }

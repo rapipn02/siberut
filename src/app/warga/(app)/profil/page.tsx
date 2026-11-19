@@ -6,6 +6,7 @@ import { useWarga } from "@/components/WargaAuthProvider";
 import { useRiwayatKontribusi, useRiwayatTukar, useSaldo } from "@/hooks/useWargaData";
 import { useIzinNotifikasi } from "@/hooks/useNotifikasiBrowser";
 import { ringkasKontribusi } from "@/lib/warga";
+import DampakSaya from "@/components/warga/DampakSaya";
 import { Kosong, jamWib, tanggalWib } from "@/components/warga/ui";
 import {
   Bell,
@@ -57,6 +58,8 @@ export default function ProfilWargaPage() {
         <Angka label="Aksi Hemat" nilai={ringkas.aksi} />
         <Angka label="Poin Didapat" nilai={ringkas.poin} />
       </section>
+
+      <DampakSaya riwayat={kontribusi} />
 
       {izin !== "granted" && izin !== "tidak-didukung" && (
         <button
@@ -136,7 +139,13 @@ export default function ProfilWargaPage() {
 }
 
 function KartuRiwayat({ r }: { r: ParticipationRequest }) {
-  const g = GAYA_STATUS[r.status] ?? GAYA_STATUS.PENDING;
+  const ditinjau = r.status === "PENDING" && Boolean(r.aiAnalisis);
+  const g = ditinjau
+    ? { ...GAYA_STATUS.PENDING, label: "Ditinjau" }
+    : (GAYA_STATUS[r.status] ?? GAYA_STATUS.PENDING);
+  const alatAi = r.aiAnalisis?.alat
+    .map((a) => `${a.nama} ±${Math.round(a.estimasiWatt)} W`)
+    .join(", ");
   const waktu = r.timestamp?.toDate?.();
   const poin = r.poinDiberikan ?? 0;
   return (
@@ -155,6 +164,17 @@ function KartuRiwayat({ r }: { r: ParticipationRequest }) {
           {poin > 0 ? `+${poin} Poin` : g.label}
         </p>
       </div>
+      {r.status === "APPROVED" && alatAi && (
+        <p className="mt-2 rounded-lg bg-violet-50 px-3 py-1.5 text-[11px] text-violet-700">
+          Diverifikasi Mata AI: {alatAi}
+          {r.estimasiKwh ? ` · ±${r.estimasiKwh} kWh digeser ke Jam Emas` : ""}
+        </p>
+      )}
+      {ditinjau && (
+        <p className="mt-2 rounded-lg bg-amber-50 px-3 py-1.5 text-[11px] text-amber-700">
+          Ditinjau petugas: {r.aiAnalisis?.alasan}
+        </p>
+      )}
       {r.status === "REJECTED" && r.verificationReason && (
         <p className="mt-2 rounded-lg bg-red-50 px-3 py-1.5 text-[11px] text-red-600">
           {r.verificationReason}

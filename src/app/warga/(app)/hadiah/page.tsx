@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase";
+import { fetchBertoken } from "@/lib/apiKlien";
 import { useWarga } from "@/components/WargaAuthProvider";
 import { useSaldo, useStokHadiah } from "@/hooks/useWargaData";
 import { useRewardCatalog } from "@/hooks/useRewards";
@@ -41,11 +41,8 @@ export default function HadiahWargaPage() {
     if (!dipilih || busy) return;
     setBusy(true);
     try {
-      const token = await auth.currentUser?.getIdToken();
-      if (!token) throw new Error("Sesi login berakhir. Silakan masuk lagi.");
-      const res = await fetch("/api/redeem", {
+      const res = await fetchBertoken("/api/redeem", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ catalog_id: dipilih.id }),
       });
       const data = await res.json().catch(() => ({}));

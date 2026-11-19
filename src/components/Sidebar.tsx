@@ -15,47 +15,55 @@ import {
   CheckCircle,
   Gift,
   Clock,
+  BarChart,
 } from "./icons";
 
 const MENU = [
-  { href: "/", label: "Dashboard", Icon: Grid, badge: null, adminOnly: false },
+  { href: "/operator", label: "Dashboard", Icon: Grid, badge: null, adminOnly: false },
   {
-    href: "/kalkulator-bbm",
+    href: "/operator/dampak",
+    label: "Dampak Iklim",
+    Icon: BarChart,
+    badge: null,
+    adminOnly: false,
+  },
+  {
+    href: "/operator/kalkulator-bbm",
     label: "Kalkulator BBM",
     Icon: Calculator,
     badge: null,
     adminOnly: false,
   },
   {
-    href: "/notifikasi",
+    href: "/operator/notifikasi",
     label: "Notifikasi",
     Icon: Bell,
-    badge: "3",
+    badge: null,
     adminOnly: false,
   },
   {
-    href: "/sesi",
+    href: "/operator/sesi",
     label: "Sesi Jam Emas",
     Icon: Clock,
     badge: null,
     adminOnly: true,
   },
   {
-    href: "/verifikasi",
+    href: "/operator/verifikasi",
     label: "Verifikasi",
     Icon: CheckCircle,
     badge: null,
     adminOnly: true,
   },
   {
-    href: "/hadiah",
+    href: "/operator/hadiah",
     label: "Hadiah",
     Icon: Gift,
     badge: null,
     adminOnly: true,
   },
   {
-    href: "/poin",
+    href: "/operator/poin",
     label: "Manajemen Poin",
     Icon: Users,
     badge: null,
@@ -142,8 +150,8 @@ export default function Sidebar({
           GENERAL
         </p>
         {[
-          { href: "/pengaturan", label: "Pengaturan", Icon: Settings },
-          { href: "/bantuan", label: "Bantuan", Icon: HelpCircle },
+          { href: "/operator/pengaturan", label: "Pengaturan", Icon: Settings },
+          { href: "/operator/bantuan", label: "Bantuan", Icon: HelpCircle },
         ].map(({ href, label, Icon }) => {
           const active = pathname === href;
           return (
@@ -182,7 +190,7 @@ export default function Sidebar({
           Cara pindahkan beban warga saat defisit.
         </p>
         <Link
-          href="/bantuan"
+          href="/operator/bantuan"
           className="inline-block text-xs font-semibold bg-brand-600 hover:bg-brand-500 rounded-full px-3 py-1.5"
         >
           Buka Panduan

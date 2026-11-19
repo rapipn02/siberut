@@ -2,41 +2,12 @@ import {
   addDoc,
   collection,
   doc,
-  increment,
   setDoc,
   updateDoc,
   writeBatch,
-  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { RewardCatalogItem } from "./types";
-
-export async function approveRedemption(
-  requestId: string,
-  uid: string,
-  poin: number,
-) {
-  await updateDoc(doc(db, "redemption_requests", requestId), {
-    status: "approved",
-  });
-  await updateDoc(doc(db, "BUMDes_rewards", uid), {
-    total_poin: increment(-poin),
-  });
-}
-
-export async function rejectRedemption(requestId: string) {
-  await updateDoc(doc(db, "redemption_requests", requestId), {
-    status: "rejected",
-  });
-}
-
-export async function addWarga(nama: string, nomorHp: string) {
-  await addDoc(collection(db, "BUMDes_rewards"), {
-    nama_warga: nama,
-    nomor_hp: nomorHp,
-    total_poin: 0,
-  });
-}
 
 export async function saveInsentifPoin(poin: number) {
   await setDoc(
@@ -52,30 +23,6 @@ export async function setAutoBroadcast(aktif: boolean) {
     { auto_broadcast_aktif: aktif },
     { merge: true },
   );
-}
-
-export async function putuskanPartisipasi(
-  id: string,
-  userId: string,
-  setujui: boolean,
-  poin: number,
-  namaOperator: string,
-) {
-  await updateDoc(doc(db, "participation_requests", id), {
-    status: setujui ? "APPROVED" : "REJECTED",
-    poinDiberikan: setujui ? poin : 0,
-    verifiedAt: serverTimestamp(),
-    verificationReason: setujui
-      ? `Disetujui manual oleh ${namaOperator}.`
-      : `Ditolak manual oleh ${namaOperator}.`,
-  });
-  if (setujui) {
-    await setDoc(
-      doc(db, "BUMDes_rewards", userId),
-      { total_poin: increment(poin) },
-      { merge: true },
-    );
-  }
 }
 
 export async function tambahHadiah(
