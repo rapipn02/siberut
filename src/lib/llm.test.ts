@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { llmAktif, mintaJson } from "./llm";
+import { llmAktif, mintaBalasan, mintaJson } from "./llm";
 
 const ENV = {
   LLM_BASE_URL: "https://contoh.test/v1beta/openai/",
@@ -78,5 +78,49 @@ describe("mintaJson", () => {
     expect(llmAktif()).toBe(false);
     expect(await mintaJson({ pesan: [], skema, validasi: isAlat })).toBeNull();
     expect(fetchPalsu).not.toHaveBeenCalled();
+  });
+});
+
+describe("ulang sekali saat layanan sibuk", () => {
+  it("503 lalu 200: hasil dari percobaan kedua", async () => {
+    fetchPalsu
+      .mockResolvedValueOnce(balasan(503, ""))
+      .mockResolvedValueOnce(balasan(200, '{"alat":"setrika"}'));
+    expect(await mintaJson({ pesan: [], skema, validasi: isAlat })).toEqual({ alat: "setrika" });
+    expect(fetchPalsu).toHaveBeenCalledTimes(2);
+  });
+
+  it("429 (kuota habis) tidak diulang", async () => {
+    fetchPalsu.mockResolvedValue(balasan(429, ""));
+    expect(await mintaJson({ pesan: [], skema, validasi: isAlat })).toBeNull();
+    expect(fetchPalsu).toHaveBeenCalledTimes(1);
+  });
+
+  it("503 dua kali: menyerah setelah percobaan kedua", async () => {
+    fetchPalsu.mockResolvedValue(balasan(503, ""));
+    expect(await mintaJson({ pesan: [], skema, validasi: isAlat })).toBeNull();
+    expect(fetchPalsu).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("mintaBalasan membedakan kuota habis dan server sibuk", () => {
+  it("429 → kuota", async () => {
+    fetchPalsu.mockResolvedValue(balasan(429, ""));
+    expect(await mintaBalasan({ pesan: [] })).toEqual({ gagal: "kuota" });
+  });
+
+  it("503 dua kali → sibuk", async () => {
+    fetchPalsu.mockResolvedValue(balasan(503, ""));
+    expect(await mintaBalasan({ pesan: [] })).toEqual({ gagal: "sibuk" });
+  });
+
+  it("timeout → sibuk", async () => {
+    fetchPalsu.mockRejectedValue(Object.assign(new Error("aborted"), { name: "AbortError" }));
+    expect(await mintaBalasan({ pesan: [] })).toEqual({ gagal: "sibuk" });
+  });
+
+  it("200 → pesan model", async () => {
+    fetchPalsu.mockResolvedValue(balasan(200, "halo"));
+    expect(await mintaBalasan({ pesan: [] })).toMatchObject({ content: "halo" });
   });
 });

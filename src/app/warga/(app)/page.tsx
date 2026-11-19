@@ -59,7 +59,7 @@ export default function BerandaWargaPage() {
 
   return (
     <div>
-      <header className="sticky top-0 z-20 flex items-center gap-3 bg-white px-5 py-3.5 shadow-sm">
+      <header className="sticky top-0 z-20 flex items-center gap-3 bg-white px-5 py-3.5 shadow-sm lg:hidden lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
         <span className="w-9 h-9 rounded-full bg-brand-600 flex items-center justify-center font-bold text-white">
           {nama.charAt(0).toUpperCase() || "W"}
         </span>
@@ -69,7 +69,8 @@ export default function BerandaWargaPage() {
         </div>
       </header>
 
-      <div className="space-y-6 p-5">
+      <div className="p-5 lg:grid lg:grid-cols-3 lg:items-start lg:gap-6 lg:p-8">
+      <div className="space-y-6 lg:col-span-2">
         <section>
           <div className="flex items-center">
             <PillStatus status={statusKini} />
@@ -95,13 +96,13 @@ export default function BerandaWargaPage() {
         </section>
 
         <section>
-          <h1 className="text-[28px] font-black leading-tight">Listrik Siberut</h1>
+          <h1 className="text-[28px] font-black leading-tight lg:text-3xl lg:font-bold">Listrik Siberut</h1>
           <p className="text-[13px] text-slate-500">
             Kontribusi Anda menjaga desa tetap terang.
           </p>
         </section>
 
-        <section className="rounded-3xl bg-slate-900 p-5 text-white">
+        <section className="rounded-3xl bg-slate-900 p-5 text-white lg:rounded-xl">
           <p className="flex items-center gap-1.5 text-[11px] font-extrabold tracking-wide text-brand-400">
             <Sun className="w-4 h-4" />
             JAM EMAS HARI INI
@@ -128,7 +129,11 @@ export default function BerandaWargaPage() {
           <p className="text-[11px] text-slate-500">
             Kirim foto alat listrik saat sesi berlangsung untuk mendapat poin BUMDes.
           </p>
-          <div className="mt-3 space-y-3">
+          <div
+            className={`mt-3 space-y-3 ${
+              sesi.length > 1 ? "md:grid md:grid-cols-2 md:gap-3 md:space-y-0 lg:grid-cols-1" : ""
+            }`}
+          >
             {memuatSesi ? (
               <div className="h-28 rounded-[20px] bg-slate-200/70 animate-pulse" />
             ) : sesi.length === 0 ? (
@@ -141,10 +146,12 @@ export default function BerandaWargaPage() {
             )}
           </div>
         </section>
+      </div>
 
+      <div className="mt-6 space-y-6 lg:mt-0">
         <Link
           href="/warga/alat"
-          className="flex items-center gap-4 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5"
+          className="flex items-center gap-4 rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5 lg:rounded-xl"
         >
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white">
             <Zap className="h-6 w-6" />
@@ -181,7 +188,7 @@ export default function BerandaWargaPage() {
             <h2 className="text-base font-extrabold">Imbauan BUMDes</h2>
             <ul className="mt-3 space-y-2">
               {imbauan.map((b) => (
-                <li key={b.id} className="flex gap-3 rounded-2xl bg-white p-4 shadow-sm">
+                <li key={b.id} className="flex gap-3 rounded-2xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
                   <span className="w-9 h-9 shrink-0 rounded-full bg-brand-50 flex items-center justify-center">
                     <Bell className="w-4 h-4 text-brand-600" />
                   </span>
@@ -199,6 +206,7 @@ export default function BerandaWargaPage() {
             </ul>
           </section>
         )}
+      </div>
       </div>
     </div>
   );

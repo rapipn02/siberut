@@ -53,7 +53,7 @@ Warga diminta memotret alat listrik berdaya besar yang SEDANG mereka nyalakan sa
 (siang hari ketika listrik tenaga surya melimpah), misalnya pompa air, setrika, mesin cuci,
 mesin es/freezer, penanak nasi, atau mesin pertukangan.
 
-Nilai foto-foto berikut dan isi JSON:
+Nilai foto berikut dan isi JSON:
 - alat: alat listrik yang terlihat beserta perkiraan daya (watt) yang wajar untuk alat rumah tangga tersebut.
 - tampakDigunakan: true bila ada tanda alat sedang dipakai/menyala (lampu indikator, air mengalir, uap, kabel tersambung, sedang dioperasikan).
 - indikasiKecurangan: "foto_layar" bila memotret layar HP/monitor, "gambar_internet" bila tampak foto katalog/stok,

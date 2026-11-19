@@ -100,8 +100,26 @@ export function angkaBriefing(titik: ForecastPoint[], kapasitasPltdKw: number): 
   };
 }
 
-/** Briefing dibuat ulang paling sering tiap 2 jam (hemat kuota; ML memperbarui tiap 3 jam). */
-export const UMUR_BRIEFING_MS = 2 * 3600_000;
+/** Briefing dibuat ulang paling sering tiap 3 jam, mengikuti siklus model ML. */
+export const UMUR_BRIEFING_MS = 3 * 3600_000;
+/** Narasi AI dipakai ulang selama angka pentingnya sama, paling lama 6 jam. */
+export const UMUR_NARASI_MS = 6 * 3600_000;
+
+/**
+ * Ringkasan kasar angka briefing. Selisih kecil (puncak ±2 kW, solar ±5 L) dan
+ * pergeseran jam defisit karena waktu berjalan tidak dianggap perubahan.
+ */
+export function sidikBriefing(a: AngkaBriefing): string {
+  return [Math.round(a.bebanPuncakKw / 5) * 5, a.jamEmas, a.jamDefisit.length, Math.round(a.literPltd / 10) * 10].join("|");
+}
+
+export function perluNarasiBaru(
+  lama: { sidik?: string; aiMs?: number } | undefined,
+  sidik: string,
+  sekarangMs: number,
+): boolean {
+  return lama?.aiMs === undefined || lama.sidik !== sidik || sekarangMs - lama.aiMs >= UMUR_NARASI_MS;
+}
 
 export function briefingSegar(dibuatMs: number | undefined, sekarangMs: number): boolean {
   return dibuatMs !== undefined && sekarangMs - dibuatMs < UMUR_BRIEFING_MS;

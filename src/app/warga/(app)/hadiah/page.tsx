@@ -72,9 +72,9 @@ export default function HadiahWargaPage() {
   }
 
   return (
-    <div className="space-y-5 p-5">
+    <div className="space-y-5 p-5 lg:p-8">
       <header>
-        <h1 className="text-2xl font-black">Katalog Hadiah</h1>
+        <h1 className="text-2xl font-black lg:text-3xl lg:font-bold">Katalog Hadiah</h1>
         <p className="text-xs text-slate-500">
           Tukarkan poin kontribusi Anda dengan token listrik & kebutuhan desa.
         </p>
@@ -82,7 +82,7 @@ export default function HadiahWargaPage() {
 
       <KartuPoin poin={poin} />
 
-      <section className="space-y-3">
+      <section className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 xl:grid-cols-3">
         {loading || memuatStok ? (
           <div className="h-24 rounded-[20px] bg-slate-200/70 animate-pulse" />
         ) : katalog.length === 0 ? (
@@ -99,9 +99,9 @@ export default function HadiahWargaPage() {
                 type="button"
                 disabled={!bisa}
                 onClick={() => setDipilih(item)}
-                className={`flex w-full items-center gap-4 rounded-[20px] border bg-white p-4 text-left transition ${
+                className={`flex w-full items-center gap-4 rounded-[20px] border bg-white p-4 text-left transition lg:rounded-xl lg:shadow-none ${
                   bisa
-                    ? "border-brand-600/20 shadow-sm active:scale-[0.99]"
+                    ? "border-brand-600/20 shadow-sm active:scale-[0.99] lg:border-slate-200 lg:hover:border-brand-600/50"
                     : "border-slate-900/5 cursor-not-allowed"
                 } ${st === "habis" ? "opacity-50" : ""}`}
               >
@@ -163,11 +163,11 @@ export default function HadiahWargaPage() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="judul-tukar"
-          className="fixed inset-0 z-40 mx-auto flex max-w-md items-end bg-black/40 sm:items-center"
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center"
           onClick={tutup}
         >
           <div
-            className="w-full rounded-t-3xl bg-white p-6 sm:m-4 sm:rounded-3xl"
+            className="w-full max-w-md rounded-t-3xl bg-white p-6 sm:m-4 sm:rounded-3xl lg:rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start">
@@ -183,7 +183,7 @@ export default function HadiahWargaPage() {
               <div className="mt-4 text-center">
                 <p className="text-sm text-slate-500">{hasil.nama}</p>
                 <p className="mt-4 text-xs font-semibold text-slate-500">KODE TOKEN ANDA:</p>
-                <p className="mt-1 select-all break-all rounded-2xl bg-brand-50 px-4 py-4 font-mono text-2xl font-black tracking-wider text-brand-700">
+                <p className="mt-1 select-all break-all rounded-2xl bg-brand-50 px-4 py-4 font-mono text-2xl font-black tracking-wider text-brand-700 lg:rounded-xl">
                   {hasil.kode}
                 </p>
                 <button

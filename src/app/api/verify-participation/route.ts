@@ -22,7 +22,9 @@ import { dataUrlFoto } from "@/lib/photo";
 const MAKS_PER_JALAN = 50;
 /** Batas panggilan Gemini per jalan cron — sisa antre ke jalan berikutnya (kuota harian terbatas). */
 const MAKS_AI_PER_JALAN = 5;
-const MAKS_FOTO_AI = 3;
+// Satu foto ≈ 1.065 token. Cukup foto pertama: AI tidak pernah menolak sendirian, foto yang
+// kurang jelas ditahan untuk petugas yang tetap melihat semua foto.
+const MAKS_FOTO_AI = 1;
 const BATAS_DETIK_AI = 30;
 
 async function analisisFoto(fotos: unknown): Promise<AnalisisFoto | null> {

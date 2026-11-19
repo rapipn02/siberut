@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useWarga } from "@/components/WargaAuthProvider";
-import WargaNav from "@/components/WargaNav";
+import WargaNav, { SidebarWarga, TopbarWarga } from "@/components/WargaNav";
 import PanelAsisten from "@/components/PanelAsisten";
 import { useNotifikasiWarga } from "@/hooks/useNotifikasiBrowser";
 import { Bell, X, Zap } from "@/components/icons";
@@ -28,7 +28,13 @@ export default function WargaAppLayout({ children }: { children: React.ReactNode
 
   return (
     <>
-      <main className="pb-24">{children}</main>
+      {/* HP & tablet: navigasi bawah. Laptop: sidebar + topbar seperti dashboard operator. */}
+      <SidebarWarga />
+      <div className="min-h-dvh lg:ml-64">
+        <TopbarWarga />
+        <main className="pb-24 lg:pb-8">{children}</main>
+      </div>
+      <WargaNav />
       <Pemberitahuan />
       <PanelAsisten
         peran="warga"
@@ -38,7 +44,6 @@ export default function WargaAppLayout({ children }: { children: React.ReactNode
           "Gimana kondisi listrik desa sekarang?",
         ]}
       />
-      <WargaNav />
     </>
   );
 }
@@ -58,7 +63,7 @@ function Pemberitahuan() {
       role="status"
       className="fixed inset-x-0 top-3 z-50 mx-auto flex max-w-md items-start gap-3 px-4"
     >
-      <div className="flex w-full items-start gap-3 rounded-2xl bg-slate-900 p-4 text-white shadow-xl">
+      <div className="flex w-full items-start gap-3 rounded-2xl bg-slate-900 p-4 text-white shadow-xl lg:rounded-xl">
         <Bell className="mt-0.5 h-5 w-5 shrink-0 text-brand-400" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold">{toast.judul}</p>

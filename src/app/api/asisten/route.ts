@@ -6,7 +6,9 @@ import { potongRiwayat, promptSistem, toolsUntuk, type Peran } from "@/lib/asist
 import { dataAwal, jalankanTool } from "@/lib/asistenServer";
 import { tanggalPanjangWib } from "@/lib/waktu";
 
-const MAKS_PUTARAN_TOOL = 3;
+const MAKS_PUTARAN_TOOL = 2; // data utama sudah dikirim di awal, jadi jarang perlu tool
+/** Batas seluruh permintaan, di bawah proxy_read_timeout nginx (60 detik). */
+const BATAS_TOTAL_MS = 50_000;
 
 /**
  * Asisten berbasis data. Peran & uid ditentukan dari token di server —
@@ -50,13 +52,23 @@ export async function POST(request: Request) {
   const dipakai: string[] = [];
 
   for (let putaran = 0; putaran <= MAKS_PUTARAN_TOOL; putaran++) {
+    // Gemini kadang butuh 10 sampai 25 detik per panggilan; sisa waktu dibagi ke putaran berikutnya.
+    const sisaDetik = (BATAS_TOTAL_MS - (Date.now() - sekarang)) / 1000;
+    if (sisaDetik < 5) break;
     const balasan = await mintaBalasan({
       pesan,
       // Putaran terakhir tanpa tools → model wajib menjawab dengan data yang sudah ada.
       tools: putaran < MAKS_PUTARAN_TOOL ? tools : undefined,
-      batasDetik: 25,
+      batasDetik: Math.min(40, sisaDetik),
     });
-    if (!balasan) break;
+    if ("gagal" in balasan) {
+      return Response.json(
+        balasan.gagal === "kuota"
+          ? { ok: false, error: "Jatah layanan AI hari ini sudah habis. Surya bisa dipakai lagi besok." }
+          : { ok: false, error: "Server AI Google sedang sibuk. Coba lagi beberapa menit lagi." },
+        { status: balasan.gagal === "kuota" ? 429 : 503 },
+      );
+    }
 
     if (!balasan.tool_calls?.length) {
       return Response.json({
@@ -79,7 +91,7 @@ export async function POST(request: Request) {
   }
 
   return Response.json(
-    { ok: false, error: "Asisten sedang sibuk. Coba lagi sebentar." },
-    { status: 502 },
+    { ok: false, error: "Server AI Google sedang lambat. Coba lagi beberapa menit lagi." },
+    { status: 503 },
   );
 }

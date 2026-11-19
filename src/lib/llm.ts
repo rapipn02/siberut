@@ -42,38 +42,48 @@ export function llmAktif(): boolean {
   return Boolean(k.baseUrl && k.key);
 }
 
-/** Satu panggilan `/chat/completions`. `null` bila gagal dengan alasan apa pun. */
-async function panggil(
-  body: Record<string, unknown>,
-  batasDetik?: number,
-): Promise<{ content: string | null; tool_calls?: PanggilanTool[] } | null> {
+type PesanModel = { content: string | null; tool_calls?: PanggilanTool[] };
+/** kuota = 429 (jatah habis, menunggu reset); sibuk = 5xx/timeout (server Google penuh, coba lagi). */
+export type GagalLlm = { gagal: "kuota" | "sibuk" | "lain" };
+
+/** Satu panggilan `/chat/completions`. Gagal dengan alasan apa pun → `{ gagal }`, tidak melempar. */
+async function panggil(body: Record<string, unknown>, batasDetik?: number): Promise<PesanModel | GagalLlm> {
   const k = konfigurasi();
-  if (!k.baseUrl || !k.key) return null;
+  if (!k.baseUrl || !k.key) return { gagal: "lain" };
 
   const kontrol = new AbortController();
   const timer = setTimeout(() => kontrol.abort(), (batasDetik ?? k.batasDetik) * 1000);
   try {
-    const res = await fetch(`${k.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${k.key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: k.model,
-        max_tokens: k.maksToken,
-        ...(k.reasoning ? { reasoning_effort: k.reasoning } : {}),
-        ...body,
-      }),
-      signal: kontrol.signal,
-    });
+    const kirim = () =>
+      fetch(`${k.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${k.key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: k.model,
+          max_tokens: k.maksToken,
+          ...(k.reasoning ? { reasoning_effort: k.reasoning } : {}),
+          ...body,
+        }),
+        signal: kontrol.signal,
+      });
+    let res = await kirim();
+    // Layanan sibuk (5xx) sering pulih dalam hitungan detik: ulang sekali, masih dalam batas waktu
+    // yang sama. 429 (kuota) tidak diulang karena hanya membuang kuota.
+    if (res.status >= 500) {
+      console.warn(`LLM membalas ${res.status}, mencoba sekali lagi.`);
+      await new Promise((r) => setTimeout(r, 800));
+      res = await kirim();
+    }
     if (!res.ok) {
       console.warn(`LLM membalas ${res.status}${res.status === 429 ? " (kuota habis)" : ""}.`);
-      return null;
+      return { gagal: res.status === 429 ? "kuota" : res.status >= 500 ? "sibuk" : "lain" };
     }
     const data = await res.json();
-    return data?.choices?.[0]?.message ?? null;
+    return data?.choices?.[0]?.message ?? { gagal: "lain" };
   } catch (err) {
     const batal = err instanceof Error && err.name === "AbortError";
     console.warn(batal ? "LLM timeout." : "LLM tidak dapat dihubungi.");
-    return null;
+    return { gagal: "sibuk" };
   } finally {
     clearTimeout(timer);
   }
@@ -96,7 +106,7 @@ export async function mintaJson<T>(opsi: {
     },
     opsi.batasDetik,
   );
-  if (!pesan?.content) return null;
+  if ("gagal" in pesan || !pesan.content) return null;
   try {
     const hasil: unknown = JSON.parse(pesan.content);
     if (opsi.validasi(hasil)) return hasil;
@@ -107,7 +117,7 @@ export async function mintaJson<T>(opsi: {
   return null;
 }
 
-/** Satu putaran obrolan dengan tools (dipakai asisten). */
+/** Satu putaran obrolan dengan tools (dipakai asisten). Gagal → `{ gagal }` agar pesan ke pengguna tepat. */
 export async function mintaBalasan(opsi: {
   pesan: PesanLlm[];
   tools?: DefinisiTool[];

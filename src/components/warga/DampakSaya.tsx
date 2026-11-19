@@ -23,10 +23,10 @@ export default function DampakSaya({ riwayat }: { riwayat: ParticipationRequest[
   const porsi = literDesa > 0 ? Math.min(100, Math.round((saya / literDesa) * 100)) : null;
 
   return (
-    <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm" aria-labelledby="judul-dampak-saya">
+    <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none" aria-labelledby="judul-dampak-saya">
       <div className="flex items-center justify-between gap-3">
         <h2 id="judul-dampak-saya" className="font-black">Dampak saya</h2>
-        <div role="tablist" aria-label="Periode" className="grid grid-cols-2 rounded-full bg-slate-100 p-1 text-xs font-bold">
+        <div role="tablist" aria-label="Periode" className="grid shrink-0 grid-cols-2 whitespace-nowrap rounded-full bg-slate-100 p-1 text-xs font-bold">
           {(["mingguIni", "bulanIni"] as const).map((p) => (
             <button
               key={p}

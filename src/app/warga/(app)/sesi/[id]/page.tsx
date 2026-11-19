@@ -40,7 +40,7 @@ export default function DetailSesiPage() {
     return (
       <div className="p-5">
         <Kembali />
-        <p className="mt-6 rounded-2xl bg-white p-5 text-sm text-slate-500 shadow-sm">
+        <p className="mt-6 rounded-2xl bg-white p-5 text-sm text-slate-500 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
           Sesi tidak ditemukan atau sudah lama berakhir.
         </p>
       </div>
@@ -55,11 +55,13 @@ export default function DetailSesiPage() {
   const berakhir = sesi.status === "ENDED" || sekarang > (sesi.endAt?.toMillis?.() ?? 0);
 
   return (
-    <div className="p-5 pb-8">
+    <div className="p-5 pb-8 lg:p-8">
       <Kembali />
 
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-start lg:gap-6">
+      <div>
       <p className="mt-4 text-sm text-slate-500">{sesi.date}</p>
-      <h1 className="text-2xl font-black">Detail Sesi Jam Emas</h1>
+      <h1 className="text-2xl font-black lg:text-3xl lg:font-bold">Detail Sesi Jam Emas</h1>
       <p className="mt-1 text-lg font-bold text-brand-600">
         {sesi.startTime} – {sesi.endTime} WIB
       </p>
@@ -78,7 +80,7 @@ export default function DetailSesiPage() {
       </div>
 
       <h2 className="mt-6 text-[15px] font-bold">Kondisi Grid Desa Saat Ini</h2>
-      <div className="mt-3 rounded-2xl bg-white p-4 shadow-sm">
+      <div className="mt-3 rounded-2xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-500">Beban Saat Ini</span>
           <span className="font-black text-brand-600">{beban} kW</span>
@@ -94,7 +96,9 @@ export default function DetailSesiPage() {
         </p>
       </div>
 
-      <div className="mt-8">
+      </div>
+
+      <div className="mt-8 lg:mt-4">
         {klaim === "disetujui" ? (
           <Info hijau>Poin sesi ini sudah Anda terima. Terima kasih!</Info>
         ) : klaim === "menunggu" ? (
@@ -118,6 +122,7 @@ export default function DetailSesiPage() {
             Aksi partisipasi akan dibuka pukul {sesi.startTime} WIB.
           </p>
         )}
+      </div>
       </div>
     </div>
   );
@@ -272,7 +277,7 @@ function KartuMetrik({
   nilai: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className="rounded-2xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
       <Icon className="w-5 h-5 text-brand-600" />
       <p className="mt-2 text-[11px] text-slate-500">{judul}</p>
       <p className="text-lg font-black">{nilai}</p>

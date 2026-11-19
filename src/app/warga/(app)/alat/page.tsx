@@ -107,19 +107,21 @@ export default function AlatSayaPage() {
   }
 
   return (
-    <div className="space-y-6 p-5">
+    <div className="space-y-6 p-5 lg:p-8">
       <Link href="/warga" className="inline-flex items-center gap-1 text-sm font-semibold text-slate-600">
         <ChevronLeft className="h-5 w-5" /> Beranda
       </Link>
 
       <header>
-        <h1 className="text-2xl font-black">Alat Saya</h1>
+        <h1 className="text-2xl font-black lg:text-3xl lg:font-bold">Alat Saya</h1>
         <p className="text-xs text-slate-500">
           Foto label alat Anda. AI membaca dayanya, lalu sistem menyusun jadwal pakai di Jam Emas.
         </p>
       </header>
 
-      <section className="rounded-3xl bg-slate-900 p-5 text-white">
+      <div className="space-y-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
+      <div className="space-y-6">
+      <section className="rounded-3xl bg-slate-900 p-5 text-white lg:rounded-xl">
         <p className="text-xs font-bold text-violet-200">Rencana hemat hari ini</p>
         {!jamEmas ? (
           <p className="mt-2 text-sm text-slate-300">
@@ -148,7 +150,7 @@ export default function AlatSayaPage() {
         )}
       </section>
 
-      <section className="rounded-3xl bg-white p-5 shadow-sm">
+      <section className="rounded-3xl bg-white p-5 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
         <h2 className="font-black">Tambah Alat</h2>
         <input ref={kamera} type="file" accept="image/*" capture="environment" hidden onChange={pindai} />
         <input ref={galeri} type="file" accept="image/*" hidden onChange={pindai} />
@@ -215,6 +217,7 @@ export default function AlatSayaPage() {
           </button>
         </form>
       </section>
+      </div>
 
       <section>
         <h2 className="text-base font-extrabold">Daftar Alat ({alat.length})</h2>
@@ -225,7 +228,7 @@ export default function AlatSayaPage() {
             <Kosong>Belum ada alat. Foto label atau pilih alat umum di atas.</Kosong>
           ) : (
             alat.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm">
+              <div key={a.id} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600">
                   <Zap className="h-5 w-5" />
                 </span>
@@ -249,6 +252,7 @@ export default function AlatSayaPage() {
           )}
         </div>
       </section>
+      </div>
     </div>
   );
 }

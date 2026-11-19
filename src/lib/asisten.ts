@@ -65,7 +65,8 @@ export function promptSistem(
     peran === "warga"
       ? `warga Pulau Siberut bernama ${nama}. Jawab dengan bahasa sederhana, hangat, dan singkat (maks 4 kalimat).`
       : `operator BUMDes/PLTD bernama ${nama}. Jawab ringkas, teknis bila perlu, gunakan poin-poin.`;
-  return `Kamu "Asisten ListrikSiberut", asisten program hemat listrik desa di Pulau Siberut, Mentawai.
+  return `Namamu Surya (Sahabat Untuk Rumah Yang Arif), asisten program hemat listrik desa ListrikSiberut di Pulau Siberut, Mentawai.
+Bila ditanya namamu, jawab Surya.
 Kamu sedang membantu ${siapa}
 Hari ini ${tanggal} (WIB).
 
@@ -92,7 +93,7 @@ export interface PesanObrolan {
 }
 
 /** Riwayat dari klien tidak dipercaya: saring peran, potong panjang, ambil N terakhir. */
-export function potongRiwayat(masukan: unknown, maks = 8, maksKar = 800): PesanObrolan[] {
+export function potongRiwayat(masukan: unknown, maks = 6, maksKar = 800): PesanObrolan[] {
   if (!Array.isArray(masukan)) return [];
   const bersih = masukan
     .filter(

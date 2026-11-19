@@ -53,7 +53,7 @@ export default function FormAkunWarga({ awal }: { awal: "masuk" | "daftar" }) {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col px-6 pt-14 pb-8">
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-6 pt-14 pb-8">
       <div className="flex flex-col items-center text-center">
         <div className="w-[72px] h-[72px] rounded-full bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/30">
           <Zap className="w-10 h-10 text-white fill-white" />

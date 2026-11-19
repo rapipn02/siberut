@@ -82,7 +82,7 @@ Centang `[x]` tiap langkah yang hasilnya sesuai. Bila tidak sesuai, catat di kol
 - [ ] Tab **Kontribusi** dan **Penukaran** berisi riwayat (atau pesan kosong)
 - [ ] **Keluar Akun** → kembali ke `/warga/masuk`; buka `/warga/profil` → dialihkan ke masuk
 
-### 2.7 Asisten (✦ Tanya)
+### 2.7 Surya (tombol Tanya Surya)
 - [ ] Tombol ungu **✦ Tanya** kanan bawah → lembar obrolan + 3 chip contoh
 - [ ] "Poin saya cukup untuk tukar apa?" → menyebut saldo & hadiah sesuai halaman Hadiah
 - [ ] "Kapan sebaiknya saya nyuci hari ini?" → menyebut Jam Emas sama dengan Beranda
@@ -149,7 +149,7 @@ Centang `[x]` tiap langkah yang hasilnya sesuai. Bila tidak sesuai, catat di kol
 - [ ] Pengaturan menampilkan konfigurasi & umur data prakiraan; cek layanan ML
 - [ ] Bantuan menampilkan panduan & FAQ
 
-### 3.10 Asisten operator
+### 3.10 Surya di dashboard operator
 - [ ] **✦ Tanya** kanan bawah → panel samping + 4 chip
 - [ ] "Berapa defisit nanti malam?" → jam defisit & solar sesuai kartu Analis AI
 - [ ] "Hemat BBM kalau 50% warga ikut?" → angka sama dengan Kalkulator BBM di 50%
@@ -166,7 +166,7 @@ Centang `[x]` tiap langkah yang hasilnya sesuai. Bila tidak sesuai, catat di kol
 - [ ] Buka langsung `/operator/poin`, `/operator/hadiah` → **"Akses ditolak"**
 - [ ] Dashboard, Kalkulator BBM, Notifikasi, Pengaturan, Bantuan bisa dibuka
 - [ ] Kartu Analis AI terbaca; **Perbarui analisis** berjalan
-- [ ] Asisten operator menjawab
+- [ ] Surya (operator) menjawab
 - [ ] Login teknisi di `/warga/masuk` → **"Akun ini bukan akun warga."**
 
 ---
@@ -207,7 +207,7 @@ curl -s http://localhost:3000/api/stok-hadiah   # hanya angka, TIDAK ada kode vo
 
 ## 7. Ketahanan AI
 
-- [ ] Kosongkan `LLM_API_KEY`, restart → Verifikasi tetap jalan (aturan saja), Analis AI menampilkan angka tanpa narasi, Pindai Label menampilkan "Fitur AI belum diaktifkan", Asisten menampilkan pesan tidak aktif — **tidak ada halaman error**
+- [ ] Kosongkan `LLM_API_KEY`, restart → Verifikasi tetap jalan (aturan saja), Analis AI menampilkan angka tanpa narasi, Pindai Label menampilkan "Fitur AI belum diaktifkan", Surya menampilkan pesan tidak aktif — **tidak ada halaman error**
 - [ ] Kembalikan `LLM_API_KEY` setelah uji
 
 ---

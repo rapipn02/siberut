@@ -41,9 +41,9 @@ export default function AnalitikWargaPage() {
   );
 
   return (
-    <div className="space-y-5 p-5">
+    <div className="space-y-5 p-5 lg:p-8">
       <header>
-        <h1 className="text-xl font-black">Kurva Kesetimbangan Daya</h1>
+        <h1 className="text-xl font-black lg:text-3xl lg:font-bold">Kurva Kesetimbangan Daya</h1>
         <p className="text-xs text-slate-500">Real-time & prediksi · Beban vs Surya</p>
       </header>
 
@@ -62,7 +62,7 @@ export default function AnalitikWargaPage() {
         ))}
       </div>
 
-      <section className="rounded-3xl bg-white p-4 shadow-sm">
+      <section className="rounded-3xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
         {loading ? (
           <div className="h-56 rounded-2xl bg-slate-100 animate-pulse" />
         ) : tampil.length === 0 ? (
@@ -83,7 +83,7 @@ export default function AnalitikWargaPage() {
       </section>
 
       {kini && (
-        <section className="rounded-3xl bg-white p-4 shadow-sm">
+        <section className="rounded-3xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold">Pukul {kini.jam} WIB</p>
             <span className="rounded-full bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
@@ -102,7 +102,7 @@ export default function AnalitikWargaPage() {
         </section>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Kartu judul="Kapasitas PLTS" nilai={plts} satuan="kWp" />
         <Kartu judul="Beban Puncak" nilai={puncak} satuan="kW" merah={puncak > pltd} />
         <Kartu judul="Batas PLTD" nilai={pltd} satuan="kW" />
@@ -148,7 +148,7 @@ function Kartu({
   merah?: boolean;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className="rounded-2xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
       <p className="text-[11px] text-slate-500">{judul}</p>
       <p className={`mt-1 text-3xl font-black ${merah ? "text-red-500" : "text-slate-900"}`}>
         {nilai}

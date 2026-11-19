@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { angkaBriefing, briefingSegar, isBriefingAi, rentangJam, type BriefingAi } from "./analisAi";
+import { angkaBriefing, briefingSegar, isBriefingAi, perluNarasiBaru, rentangJam, sidikBriefing, type BriefingAi } from "./analisAi";
 
 const contoh: BriefingAi = {
   ringkasan: "Defisit malam ini pukul 17:00–21:00.",
@@ -74,5 +74,34 @@ describe("rentangJam", () => {
   });
   it("kosong bila tidak ada jam", () => {
     expect(rentangJam([])).toBe("");
+  });
+});
+
+describe("hemat kuota briefing", () => {
+  const angka = { bebanPuncakKw: 76, jamPuncak: "19:00", jamDefisit: ["19:00", "20:00"], jamEmas: "10:00 sampai 14:00", literPltd: 386.8 };
+  const JAM = 3600_000;
+
+  it("briefing segar selama 3 jam (siklus ML)", () => {
+    expect(briefingSegar(0, 2.5 * JAM)).toBe(true);
+    expect(briefingSegar(0, 3 * JAM)).toBe(false);
+  });
+
+  it("sidik tidak berubah oleh selisih kecil atau pergeseran jam defisit", () => {
+    const geser = { ...angka, bebanPuncakKw: 77, jamDefisit: ["20:00", "21:00"], literPltd: 389 };
+    expect(sidikBriefing(geser)).toBe(sidikBriefing(angka));
+  });
+
+  it("sidik berubah bila Jam Emas, jumlah jam defisit, atau puncak bergeser nyata", () => {
+    expect(sidikBriefing({ ...angka, jamEmas: "11:00 sampai 13:00" })).not.toBe(sidikBriefing(angka));
+    expect(sidikBriefing({ ...angka, jamDefisit: ["19:00"] })).not.toBe(sidikBriefing(angka));
+    expect(sidikBriefing({ ...angka, bebanPuncakKw: 90 })).not.toBe(sidikBriefing(angka));
+  });
+
+  it("narasi baru hanya bila belum ada, sidik berubah, atau narasi lama >= 6 jam", () => {
+    const s = sidikBriefing(angka);
+    expect(perluNarasiBaru(undefined, s, 0)).toBe(true);
+    expect(perluNarasiBaru({ sidik: s, aiMs: 0 }, s, 5 * JAM)).toBe(false);
+    expect(perluNarasiBaru({ sidik: s, aiMs: 0 }, s, 6 * JAM)).toBe(true);
+    expect(perluNarasiBaru({ sidik: "lain", aiMs: 0 }, s, JAM)).toBe(true);
   });
 });

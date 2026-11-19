@@ -43,12 +43,13 @@ export default function ProfilWargaPage() {
   }
 
   return (
-    <div className="p-5">
+    <div className="p-5 lg:grid lg:grid-cols-3 lg:items-start lg:gap-6 lg:p-8">
+      <div>
       <section className="flex flex-col items-center pt-4 text-center">
         <span className="flex h-[110px] w-[110px] items-center justify-center rounded-full border-4 border-brand-600/10 bg-white text-5xl font-black text-brand-600">
           {nama.charAt(0).toUpperCase() || "W"}
         </span>
-        <h1 className="mt-4 text-2xl font-black">{nama}</h1>
+        <h1 className="mt-4 text-2xl font-black lg:text-3xl lg:font-bold">{nama}</h1>
         <p className="text-sm text-slate-500">{warga?.email}</p>
         {warga?.phone && <p className="text-xs text-slate-400">{warga.phone}</p>}
       </section>
@@ -66,7 +67,7 @@ export default function ProfilWargaPage() {
           type="button"
           onClick={minta}
           disabled={izin === "denied"}
-          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-brand-600/20 bg-brand-50 p-4 text-left disabled:opacity-70"
+          className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-brand-600/20 bg-brand-50 p-4 text-left disabled:opacity-70 lg:rounded-xl"
         >
           <Bell className="h-5 w-5 shrink-0 text-brand-600" />
           <span className="text-sm">
@@ -82,7 +83,10 @@ export default function ProfilWargaPage() {
         </button>
       )}
 
-      <div className="mt-6 grid grid-cols-2 h-10 p-1 rounded-full bg-slate-200/70">
+      </div>
+
+      <div className="lg:col-span-2">
+      <div className="mt-6 grid grid-cols-2 h-10 p-1 rounded-full bg-slate-200/70 lg:mt-0">
         <TabTombol aktif={tab === "kontribusi"} onClick={() => setTab("kontribusi")}>
           <History className="h-4 w-4" /> Kontribusi
         </TabTombol>
@@ -108,7 +112,7 @@ export default function ProfilWargaPage() {
           tukar.map((t) => {
             const waktu = t.timestamp?.toDate?.();
             return (
-              <div key={t.id} className="rounded-2xl bg-white p-4 shadow-sm">
+              <div key={t.id} className="rounded-2xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
                 <div className="flex items-center">
                   <p className="flex-1 font-bold">{t.nama_hadiah}</p>
                   <p className="text-sm font-black text-red-500">-{t.biaya_poin}</p>
@@ -130,10 +134,11 @@ export default function ProfilWargaPage() {
       <button
         type="button"
         onClick={handleKeluar}
-        className="mt-8 flex w-full items-center gap-4 border-t border-slate-900/5 py-4 font-bold text-red-500"
+        className="mt-8 flex w-full lg:hidden items-center gap-4 border-t border-slate-900/5 py-4 font-bold text-red-500"
       >
         <LogOut className="h-5 w-5" /> Keluar Akun
       </button>
+      </div>
     </div>
   );
 }
@@ -149,7 +154,7 @@ function KartuRiwayat({ r }: { r: ParticipationRequest }) {
   const waktu = r.timestamp?.toDate?.();
   const poin = r.poinDiberikan ?? 0;
   return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm">
+    <div className="rounded-2xl bg-white p-4 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
       <div className="flex items-center gap-4">
         <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${g.latar}`}>
           <g.Icon className={`h-6 w-6 ${g.warna}`} />
@@ -186,7 +191,7 @@ function KartuRiwayat({ r }: { r: ParticipationRequest }) {
 
 function Angka({ label, nilai }: { label: string; nilai: number }) {
   return (
-    <div className="rounded-2xl bg-white p-3 shadow-sm">
+    <div className="rounded-2xl bg-white p-3 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
       <p className="text-xl font-black">{nilai}</p>
       <p className="text-[10px] text-slate-500">{label}</p>
     </div>

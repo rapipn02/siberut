@@ -58,7 +58,7 @@ export function PillStatus({ status }: { status: StatusWarga }) {
 
 export function KartuPoin({ poin }: { poin: number }) {
   return (
-    <div className="flex items-center rounded-3xl border border-brand-600/10 bg-brand-50 p-5">
+    <div className="flex items-center rounded-3xl border border-brand-600/10 bg-brand-50 p-5 lg:rounded-xl">
       <div className="flex-1">
         <p className="text-[11px] font-extrabold tracking-wide text-brand-600">
           SALDO POIN BUMDes
@@ -89,10 +89,10 @@ export function KartuSesi({ sesi }: { sesi: LoadShiftSession }) {
   return (
     <Link
       href={`/warga/sesi/${sesi.id}`}
-      className={`flex items-center rounded-[20px] border bg-white p-5 transition active:scale-[0.99] ${
+      className={`flex items-center rounded-[20px] border bg-white p-5 transition active:scale-[0.99] lg:rounded-xl lg:shadow-none ${
         aktif
-          ? "border-brand-600/50 shadow-lg shadow-brand-600/10"
-          : "border-slate-900/10 shadow-sm"
+          ? "border-brand-600/50 shadow-lg shadow-brand-600/10 lg:border-brand-600"
+          : "border-slate-900/10 shadow-sm lg:border-slate-200"
       }`}
     >
       <div className="flex-1 min-w-0">
@@ -128,7 +128,7 @@ export function KartuSesi({ sesi }: { sesi: LoadShiftSession }) {
 
 export function Kosong({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-white p-5 text-[13px] text-slate-500 shadow-sm">
+    <div className="rounded-2xl bg-white p-5 text-[13px] text-slate-500 shadow-sm lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
       {children}
     </div>
   );

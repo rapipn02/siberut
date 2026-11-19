@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchBertoken } from "@/lib/apiKlien";
 import type { PesanObrolan } from "@/lib/asisten";
-import { Send, X } from "./icons";
+import { Bot, Send, X } from "./icons";
 
 /** Teks model → tebal (**x**) & butir (- x), tanpa merender HTML mentah. */
 function TeksAsisten({ teks }: { teks: string }) {
@@ -38,6 +38,7 @@ export default function PanelAsisten({
   const [pesan, setPesan] = useState<PesanObrolan[]>([]);
   const [teks, setTeks] = useState("");
   const [busy, setBusy] = useState(false);
+  const [lambat, setLambat] = useState(false);
   const [sisa, setSisa] = useState<number | null>(null);
   const bawah = useRef<HTMLDivElement>(null);
 
@@ -52,6 +53,7 @@ export default function PanelAsisten({
     setPesan(riwayat);
     setTeks("");
     setBusy(true);
+    const penandaLambat = setTimeout(() => setLambat(true), 10_000);
     try {
       const d = await (
         await fetchBertoken("/api/asisten", { method: "POST", body: JSON.stringify({ pesan: riwayat }) })
@@ -61,6 +63,8 @@ export default function PanelAsisten({
     } catch {
       setPesan([...riwayat, { role: "assistant", content: "⚠ Tidak dapat menghubungi server." }]);
     } finally {
+      clearTimeout(penandaLambat);
+      setLambat(false);
       setBusy(false);
     }
   }
@@ -73,33 +77,39 @@ export default function PanelAsisten({
         <button
           type="button"
           onClick={() => setBuka(true)}
-          aria-label="Buka asisten"
+          aria-label="Tanya Surya, asisten ListrikSiberut"
           className={`fixed z-40 flex items-center gap-2 rounded-full bg-violet-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/30 hover:bg-violet-700 ${
-            warga ? "bottom-24 right-[max(1rem,calc(50%-14rem+1rem))]" : "bottom-6 right-6"
+            warga
+              ? "bottom-24 right-[max(1rem,calc(50%-14rem+1rem))] md:right-[max(1rem,calc(50%-24rem+1rem))] lg:bottom-6 lg:right-6"
+              : "bottom-6 right-6"
           }`}
         >
-          Tanya asisten
+          <Bot className="h-5 w-5" />
+          Tanya Surya
         </button>
       )}
 
       {buka && (
         <div
           role="dialog"
-          aria-label="Asisten ListrikSiberut"
+          aria-label="Surya, asisten ListrikSiberut"
           className={`fixed z-50 flex flex-col bg-white shadow-2xl ${
             warga
-              ? "inset-x-0 bottom-0 mx-auto h-[78dvh] max-w-md rounded-t-3xl"
+              ? "inset-x-0 bottom-0 mx-auto h-[78dvh] max-w-md rounded-t-3xl lg:inset-x-auto lg:right-6 lg:bottom-6 lg:h-[70vh] lg:w-[420px] lg:rounded-2xl lg:border lg:border-slate-200"
               : "bottom-6 right-6 h-[70vh] w-[min(420px,calc(100vw-3rem))] rounded-2xl border border-slate-200"
           }`}
         >
-          <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3">
+          <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+              <Bot className="h-5 w-5" />
+            </span>
             <div className="flex-1">
-              <p className="text-sm font-black">Asisten ListrikSiberut</p>
+              <p className="text-sm font-black">Surya, asisten ListrikSiberut</p>
               <p className="text-[11px] text-slate-500">
                 Menjawab dari data asli sistem{sisa !== null ? ` · sisa ${sisa} pertanyaan hari ini` : ""}
               </p>
             </div>
-            <button type="button" aria-label="Tutup asisten" onClick={() => setBuka(false)} className="p-1 text-slate-400">
+            <button type="button" aria-label="Tutup Surya" onClick={() => setBuka(false)} className="p-1 text-slate-400">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -109,8 +119,8 @@ export default function PanelAsisten({
               <div>
                 <p className="text-slate-500">
                   {warga
-                    ? "Tanya soal listrik desa, Jam Emas, poin, atau hadiah Anda."
-                    : "Tanya kondisi grid, partisipasi warga, stok voucher, atau simulasi BBM."}
+                    ? "Halo, saya Surya. Tanya saja soal Jam Emas, poin, hadiah, atau kondisi listrik desa."
+                    : "Halo, saya Surya. Tanya soal prakiraan, partisipasi warga, stok voucher, atau simulasi BBM."}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {saran.map((s) => (
@@ -140,7 +150,9 @@ export default function PanelAsisten({
             {busy && (
               <div className="flex">
                 <div className="rounded-2xl bg-slate-100 px-3.5 py-2.5 text-slate-500">
-                  <span className="animate-pulse">Memeriksa data…</span>
+                  <span className="animate-pulse">
+                    {lambat ? "Layanan AI sedang lambat, Surya masih menunggu jawaban…" : "Memeriksa data…"}
+                  </span>
                 </div>
               </div>
             )}

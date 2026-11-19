@@ -2,140 +2,85 @@
 
 [![CI](https://github.com/rapipn02/siberut/actions/workflows/ci.yml/badge.svg)](https://github.com/rapipn02/siberut/actions/workflows/ci.yml)
 
-Platform **Community Demand-Side Management** untuk microgrid terisolasi Pulau Siberut,
-Mentawai (PLTS 75 kWp + PLTD 50 kW, 327 KK). AI memprediksi kapan listrik surya melimpah,
-warga menggeser pemakaian alat berat ke **Jam Emas**, solar PLTD dihemat — setiap aksi
-diverifikasi **Mata AI** dan dihargai poin BUMDes.
+Aplikasi web hemat listrik untuk microgrid Pulau Siberut, Mentawai (PLTS 75 kWp, PLTD 50 kW, 327 KK).
+Model ML memprakirakan kapan listrik surya melimpah, warga menggeser pemakaian alat berat ke **Jam Emas**,
+dan setiap aksi yang terverifikasi mendapat poin BUMDes. Dibuat untuk IT RUSH 2026, subtema Smart Small Island.
 
-Satu aplikasi web, dua pintu (`/` langsung ke `/login`):
-
-| Rute | Untuk | Isi |
+| Halaman | Pengguna | Isi |
 |---|---|---|
-| `/warga` | warga (HP, bisa di-install sebagai PWA) | Jam Emas, kirim bukti foto, poin & hadiah, Alat Saya, asisten |
-| `/operator` | Admin BUMDes & Teknisi PLTD | pemantauan grid, Analis AI, Dampak Iklim (hari/minggu/bulan), verifikasi, broadcast, hadiah |
+| `/warga` | warga (HP atau laptop) | Jam Emas, kirim foto bukti, poin dan hadiah, Alat Saya, asisten Surya |
+| `/operator` | Admin BUMDes, Teknisi PLTD | pemantauan grid, briefing AI, Dampak Iklim, verifikasi, broadcast, hadiah |
 
-Next.js 16 · React 19 · Firebase (Auth + Firestore + FCM) · Tailwind 4 · Recharts · Gemini (endpoint kompatibel-OpenAI)
-
----
-
-## Arsitektur
-
-```mermaid
-flowchart LR
-  OM[Open-Meteo<br/>cuaca satelit] --> ML[Layanan ML<br/>FastAPI + XGBoost<br/>cron 3 jam]
-  ML -->|power_forecasts<br/>system_status| FS[(Firestore)]
-  FS <--> WEB[Next.js<br/>/operator · /warga · /api]
-  WEB <-->|chat/completions<br/>JSON schema · vision · tools| GM[Gemini]
-  WEB -->|FCM topik WARGA| HP[HP warga]
-  CRON[cron VPS] -->|X-Cron-Secret| WEB
-```
-
-Firestore adalah penghubung antar tim (ML ↔ web). Semua tulisan yang menyangkut poin,
-voucher, dan keputusan verifikasi terjadi di server (Admin SDK, transaksi) — klien hanya
-membaca, kecuali membuat pengajuan foto dan daftar alat miliknya sendiri.
-
-## AI di IslandGrid
-
-| Fitur | Model | Di mana | Apa yang dikerjakan AI | Yang **tidak** diserahkan ke AI |
-|---|---|---|---|---|
-| Prediksi PLTS | XGBoost (tim ML) | `power_forecasts` | prakiraan surya & beban 48 jam | — |
-| **Mata AI** | Gemini Vision | `/api/verify-participation` | menilai foto bukti: alat apa, sedang dipakai, foto layar/gambar internet; perkiraan watt | aturan waktu/duplikat tetap gerbang pertama; AI ragu → **ditahan untuk operator**, tidak pernah menolak sendirian |
-| **Analis AI** | Gemini, JSON terstruktur | kartu dashboard, `/api/ai/briefing` | narasi risiko per jam, saran jadwal PLTD, draf imbauan (dipakai auto-broadcast) | angka (puncak, jam defisit, liter solar) dihitung kode |
-| **Pindai Label Alat** | Gemini Vision | `/warga/alat`, `/api/ai/label` | membaca jenis, merek, watt dari nameplate | jadwal & penghematan dihitung kode |
-| **Asisten Data** | Gemini, function calling | tombol ✦ Tanya, `/api/asisten` | menjawab pertanyaan warga/operator | jawaban hanya dari hasil tool; uid & peran dari token server |
-
-Prinsip yang dipegang semua fitur AI:
-
-- **Selalu ada jalur tanpa AI.** Key kosong, kuota habis (429), timeout, atau JSON rusak → `src/lib/llm.ts` mengembalikan `null` dan fitur jatuh ke aturan biasa.
-- **Keluaran AI divalidasi** (`json_schema` + type-guard) sebelum menyentuh data.
-- **Hemat kuota:** Mata AI hanya untuk pengajuan yang lolos aturan (maks 5/jalan cron); briefing maks tiap 2 jam; label & asisten dibatasi per pengguna per hari (`ai_kuota`).
-- **Hasil disimpan** (`aiAnalisis`, `ai_briefing/terbaru`) sehingga tetap tampil saat kuota habis dan bisa diaudit.
-- **Dampak terukur:** estimasi watt dari Mata AI → `estimasiKwh` per partisipasi → kartu *Dampak Nyata* (kWh, liter solar, rupiah, CO₂).
+Teknologi: Next.js 16, React 19, Firebase (Auth, Firestore, FCM), Tailwind 4, Recharts, Gemini API.
 
 ## Menjalankan
 
 ```bash
 npm install
-cp .env.example .env.local     # isi nilainya, lihat tabel di bawah
-npm run dev                    # http://localhost:3000
+cp .env.example .env.local   # isi Firebase, service account, CRON_SECRET, LLM_*
+npm run dev                  # http://localhost:3000
+npm test                     # unit test
 ```
 
-### `.env.local`
+Akun demo (kata sandi `password123`): `admin@bumdes.id`, `teknisi@bumdes.id`, `warga@siberut.id`.
+Panduan deploy ada di `DEPLOY.md`.
 
-| Variabel | Keterangan |
-|---|---|
-| `NEXT_PUBLIC_FIREBASE_*` | Firebase Console → Project settings → Your apps |
-| `GOOGLE_APPLICATION_CREDENTIALS` / `FIREBASE_SERVICE_ACCOUNT_JSON` | service account (Admin SDK) — **jangan commit** |
-| `CRON_SECRET` | wajib di produksi; kosong = route cron hanya terbuka di mode dev |
-| `ISLANDGRID_API_BASE_URL`, `ISLANDGRID_API_KEY` | layanan ML (opsional saat lokal) |
-| `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL`, `LLM_REASONING_EFFORT`, `LLM_MAKS_TOKEN`, `LLM_BATAS_DETIK` | Gemini via endpoint kompatibel-OpenAI. Kosong = semua fitur AI nonaktif, aplikasi tetap jalan |
+## Penggunaan template, library, aset, layanan, dan AI
 
-### Data & akun demo
+Sesuai ketentuan IT RUSH 2026, semua template, library, aset open-source, layanan, dan AI coding assistant
+yang dipakai dicantumkan di bawah ini dan di proposal.
 
-```bash
-npm run seed:warga   # aman untuk DB yang sedang dipakai: hanya akun demo warga
-npm run seed         # ⚠ DB baru saja — MENIMPA poin, katalog, voucher, sesi
-```
+### Template
 
-| Akun | Peran | Akses |
+| Nama | Dipakai untuk | Lisensi |
 |---|---|---|
-| `admin@bumdes.id` | Admin BUMDes | seluruh `/operator` |
-| `teknisi@bumdes.id` | Teknisi PLTD | tanpa Sesi, Verifikasi, Hadiah, Poin |
-| `warga@siberut.id` | Warga | `/warga` |
+| `create-next-app` (Vercel) | kerangka awal proyek Next.js (konfigurasi TypeScript, ESLint, Tailwind). Berkas contoh bawaan di `public/` (`file.svg`, `globe.svg`, `next.svg`, `vercel.svg`, `window.svg`) tidak dipakai di halaman. | MIT |
 
-Kata sandi semua akun demo: `password123`. Warga baru mendaftar sendiri di `/warga/daftar`.
+Tidak memakai template UI atau dashboard siap pakai. Tampilan disusun tim, dengan rancangan website tim sebagai acuan portal warga.
 
-### Pemeriksaan
+### Library
 
-```bash
-npm test          # 166 unit test
-npx tsc --noEmit
-npm run lint      # 0 error, 0 warning
-npm run build
-```
+| Library | Versi | Dipakai untuk | Lisensi |
+|---|---|---|---|
+| next | 16.2.12 | framework web (App Router, API route) | MIT |
+| react, react-dom | 19.2.4 | antarmuka | MIT |
+| firebase | 12.x | Auth, Firestore, Messaging di browser | Apache-2.0 |
+| firebase-admin | 14.x | Firestore, Auth, FCM di server | Apache-2.0 |
+| recharts | 3.x | grafik beban vs surya, Dampak Iklim | MIT |
+| @opentelemetry/api | 1.9.x | dependensi instrumentasi Next.js | Apache-2.0 |
+| tailwindcss, @tailwindcss/postcss | 4.x | styling | MIT |
+| typescript | 5.x | bahasa | Apache-2.0 |
+| vitest | 4.x | unit test | MIT |
+| eslint, eslint-config-next | 9.x / 16.2.12 | linting | MIT |
+| tsx | 4.x | menjalankan skrip seed | MIT |
+| dotenv | 17.x | memuat `.env` pada skrip | BSD-2-Clause |
+| @types/node, @types/react, @types/react-dom | sesuai `package.json` | tipe TypeScript | MIT |
 
-Semua dijalankan otomatis oleh GitHub Actions (`.github/workflows/ci.yml`) di setiap push/PR.
+Layanan ML (repo terpisah, [zhhraid/islandgrid-ai-ml](https://github.com/zhhraid/islandgrid-ai-ml)) memakai antara lain FastAPI dan XGBoost; daftar lengkapnya ada di README repo tersebut.
 
-## API
+### Aset
 
-| Endpoint | Siapa | Fungsi |
+| Aset | Sumber | Lisensi |
 |---|---|---|
-| `POST /api/sessions/tick` | cron / operator | status sesi UPCOMING→ACTIVE→ENDED, peserta, kWh tergeser, `statistik/dampak` |
-| `POST /api/verify-participation` | cron / admin | mesin aturan + Mata AI, poin otomatis |
-| `POST /api/auto-broadcast` | cron | beban ≥ 90% PLTD / defisit ≤ 3 jam → FCM + sesi otomatis (draf Analis AI bila segar) |
-| `POST /api/forecast/refresh` | cron / operator | jalankan model ML, lalu perbarui briefing |
-| `POST /api/ai/briefing` | cron / operator | susun briefing Analis AI |
-| `POST /api/statistik/hitung` | cron / operator | hitung `statistik_harian` (hari ini + kemarin; operator boleh isi riwayat ≤ 120 hari) |
-| `POST /api/broadcast` | operator | push imbauan manual |
-| `POST /api/verifikasi/putuskan` | admin | setujui/tolak manual (transaksi, poin tidak ganda, saldo tak minus) |
-| `POST /api/redeem` | warga | tukar poin → kode voucher (transaksi) |
-| `GET /api/stok-hadiah` | publik | jumlah stok per hadiah — **tanpa kode** |
-| `POST /api/ai/label` | warga | baca label alat |
-| `POST /api/asisten` | warga / operator | asisten berbasis data |
+| Font Inter | Google Fonts, dimuat lewat `next/font` | SIL Open Font License 1.1 |
+| Ikon di `src/components/icons.tsx` | jalur SVG diadaptasi dari [Lucide](https://lucide.dev) (turunan Feather Icons) | ISC (Lucide), MIT (Feather) |
+| Logo `public/logo-islandgrid.png` | [ISI: dibuat tim / sumber lain] | [ISI] |
 
-"cron" = header `X-Cron-Secret`; "operator/admin/warga" = `Authorization: Bearer <Firebase ID token>`
-yang diverifikasi server lalu dicocokkan dengan `operators/{uid}` atau `users/{uid}`.
+### Layanan dan data eksternal
 
-## Keamanan
+| Layanan | Dipakai untuk | Ketentuan |
+|---|---|---|
+| Firebase (Google) | basis data, autentikasi, notifikasi push | Firebase Terms of Service |
+| Google Gemini API (`gemini-3.5-flash-lite`) | fitur AI di dalam aplikasi: Mata AI (cek foto bukti), Analis AI (briefing operator), Pindai Label, asisten Surya | Gemini API Additional Terms |
+| Open-Meteo | data cuaca (radiasi, tutupan awan, suhu) untuk model ML | data CC BY 4.0, wajib atribusi: *Weather data by [Open-Meteo.com](https://open-meteo.com/)* |
 
-- Tidak ada header yang bisa dipalsukan dari browser; peran selalu dari token + Firestore.
-- `firestore.rules`: warga **tidak bisa** membaca `voucher_stock` (berisi kode asli), menulis poin, atau membuat riwayat penukaran; `participation_requests.timestamp` wajib waktu server; `users.role` wajib `WARGA`.
-- Mesin verifikasi membandingkan `timestamp` klien dengan `createTime` dokumen (waktu server) — klaim waktu mundur ditolak walau rules belum dipasang.
-- Pasang `firestore.rules` dan `firestore.indexes.json` di Firebase Console (lihat `DEPLOY.md`).
+### AI coding assistant dan alat bantu AI
 
-## Batasan yang diakui
+| Alat | Bagian karya yang dibantu | Cara pemakaian |
+|---|---|---|
+| Claude (Claude Code, Anthropic) | perbaikan keamanan API dan aturan Firestore; statistik Dampak Iklim; tata letak responsif; unit test; analisis kinerja dan pemakaian token; panduan deploy; draf naskah revisi proposal, diagram arsitektur, dan tangkapan layar dokumentasi | asisten pemrograman di editor dengan instruksi dari tim per tugas. Kebutuhan, alur, desain, dan keputusan akhir ditentukan tim. Semua kode ditinjau dan diuji tim (unit test, typecheck, lint, build) sebelum diterapkan. |
+| [ISI: AI lain yang dipakai anggota tim, misalnya untuk riset atau slide] | [ISI] | [ISI] |
 
-- Belum ada telemetri meteran: beban yang digeser adalah **perkiraan** dari daya alat di foto (asumsi 1 jam pemakaian), bukan pembacaan meteran.
-- Prakiraan beresolusi per jam, diperbarui tiap 3 jam.
-- Notifikasi portal warga hanya saat halaman terbuka (Web Push belum dibuat); FCM tetap untuk perangkat yang subscribe topik `WARGA`.
-- Kuota gratis Gemini terbatas — fitur AI berhenti sementara saat habis, aplikasi tetap berjalan.
+Gemini pada tabel layanan adalah **bagian dari produk** (dipanggil aplikasi saat berjalan), bukan alat bantu pembuatan. Model prakiraan PLTS (XGBoost) dilatih sendiri oleh tim ML.
 
-## Struktur
 
-```
-src/app/            page.tsx (alih ke /login) · operator/* · warga/* · login · api/*
-src/lib/            logika murni + teruji (verification, mataAi, analisAi, alatWarga, asisten, warga, fuel, waktu, izin, llm)
-src/lib/*Server.ts  bagian yang menyentuh Admin SDK (auth, briefing, asisten, kuota)
-src/hooks/          listener Firestore (onSnapshot)
-src/components/     UI bersama (PanelAsisten, KartuAnalisAi, KartuDampak, PanelAi, …)
-```

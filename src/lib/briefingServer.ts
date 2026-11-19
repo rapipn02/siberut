@@ -5,6 +5,8 @@ import {
   angkaBriefing,
   briefingSegar,
   isBriefingAi,
+  perluNarasiBaru,
+  sidikBriefing,
   promptBriefing,
   type AngkaBriefing,
   type BriefingAi,
@@ -18,6 +20,8 @@ export interface DokBriefing {
   dibuat: Timestamp;
   /** Waktu narasi AI dibuat — bisa lebih lama dari `dibuat` bila AI sedang tidak tersedia. */
   aiDibuat: Timestamp | null;
+  /** sidikBriefing(angka) saat narasi AI dibuat; narasi dipakai ulang selama sidiknya sama. */
+  sidik?: string | null;
 }
 
 /**
@@ -28,7 +32,7 @@ export interface DokBriefing {
 export async function buatBriefing(
   db: Firestore,
   opsi: { paksa?: boolean } = {},
-): Promise<"baru" | "segar" | "tanpa-data" | "tanpa-ai"> {
+): Promise<"baru" | "segar" | "tanpa-data" | "tanpa-ai" | "narasi-lama"> {
   const ref = db.collection("ai_briefing").doc("terbaru");
   const lama = (await ref.get()).data() as DokBriefing | undefined;
   const sekarang = Date.now();
@@ -61,7 +65,14 @@ export async function buatBriefing(
   const pltdKw = s.total_pltd_capacity_kw ?? 50;
   const angka = angkaBriefing(titik, pltdKw);
 
-  const ai = llmAktif()
+  // Hemat kuota: angka penting sama dan narasi belum 6 jam → pakai narasi lama tanpa memanggil AI.
+  const sidik = sidikBriefing(angka);
+  const pakaiLama =
+    !opsi.paksa &&
+    Boolean(lama?.ai) &&
+    !perluNarasiBaru({ sidik: lama?.sidik ?? undefined, aiMs: lama?.aiDibuat?.toMillis() }, sidik, sekarang);
+
+  const ai = llmAktif() && !pakaiLama
     ? await mintaJson({
         pesan: [
           {
@@ -84,7 +95,8 @@ export async function buatBriefing(
     ai: ai ?? lama?.ai ?? null,
     dibuat: Timestamp.fromMillis(sekarang),
     aiDibuat: ai ? Timestamp.fromMillis(sekarang) : (lama?.aiDibuat ?? null),
+    sidik: ai ? sidik : (lama?.sidik ?? null),
   };
   await ref.set(dok);
-  return ai ? "baru" : "tanpa-ai";
+  return ai ? "baru" : pakaiLama ? "narasi-lama" : "tanpa-ai";
 }
