@@ -22,12 +22,12 @@ export function muatBatas(fotos: string[], batasKb = BATAS_FOTO_KB): boolean {
 }
 
 /**
- * Kompres foto kamera HP (2–5 MB) jadi JPEG kecil, kembalikan Base64 mentah
+ * Kompres foto (berkas atau frame video kamera langsung) jadi JPEG kecil, kembalikan Base64 mentah
  * tanpa awalan `data:` — format yang diharapkan `participation_requests`.
  * Kualitas diturunkan bertahap sampai muat ~1/3 batas total.
  */
-export async function kompresFoto(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+export async function kompresFoto(sumber: Blob | HTMLVideoElement): Promise<string> {
+  const bitmap = await createImageBitmap(sumber, { imageOrientation: "from-image" });
   const { lebar, tinggi } = ukuranTarget(bitmap.width, bitmap.height);
   const canvas = document.createElement("canvas");
   canvas.width = lebar;

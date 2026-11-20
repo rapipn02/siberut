@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
@@ -9,15 +9,14 @@ import { useWarga } from "@/components/WargaAuthProvider";
 import { useSessions } from "@/hooks/useSessions";
 import { useRiwayatKontribusi } from "@/hooks/useWargaData";
 import { klaimSaya, statusKirimBukti } from "@/lib/warga";
-import { BATAS_FOTO_KB, MAKS_FOTO, kompresFoto, muatBatas } from "@/lib/kompresFoto";
+import { BATAS_FOTO_KB, MAKS_FOTO, muatBatas } from "@/lib/kompresFoto";
+import KameraLangsung from "@/components/warga/KameraLangsung";
 import { totalUkuranKb } from "@/lib/photo";
 import { useSekarang } from "@/components/warga/ui";
 import {
-  Camera,
   CheckCircle,
   ChevronLeft,
   Clock,
-  Picture,
   Users,
   X,
   Zap,
@@ -131,34 +130,11 @@ export default function DetailSesiPage() {
 function FormBukti({ sesiId, poin, rentang }: { sesiId: string; poin: number; rentang: string }) {
   const { warga } = useWarga();
   const [fotos, setFotos] = useState<string[]>([]);
-  const [memproses, setMemproses] = useState(false);
   const [mengirim, setMengirim] = useState(false);
   const [error, setError] = useState("");
-  const kamera = useRef<HTMLInputElement>(null);
-  const galeri = useRef<HTMLInputElement>(null);
 
   const totalKb = totalUkuranKb(fotos);
   const muat = muatBatas(fotos);
-
-  async function pilih(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = ""; // supaya file yang sama bisa dipilih lagi
-    if (files.length === 0) return;
-    setError("");
-    const sisa = MAKS_FOTO - fotos.length;
-    if (files.length > sisa) setError(`Maksimal ${MAKS_FOTO} foto per klaim.`);
-    setMemproses(true);
-    const baru: string[] = [];
-    for (const f of files.slice(0, Math.max(0, sisa))) {
-      try {
-        baru.push(await kompresFoto(f));
-      } catch {
-        setError("Ada foto yang tidak bisa dibaca. Gunakan format JPG atau PNG.");
-      }
-    }
-    setFotos((lama) => [...lama, ...baru]);
-    setMemproses(false);
-  }
 
   async function kirim() {
     if (!warga || fotos.length === 0 || !muat || mengirim) return;
@@ -191,29 +167,16 @@ function FormBukti({ sesiId, poin, rentang }: { sesiId: string; poin: number; re
         sekarang. Dapatkan +{poin} poin.
       </p>
 
-      <input ref={kamera} type="file" accept="image/*" capture="environment" hidden onChange={pilih} />
-      <input ref={galeri} type="file" accept="image/*" multiple hidden onChange={pilih} />
+      <KameraLangsung
+        bisaPotret={fotos.length < MAKS_FOTO && !mengirim}
+        onFoto={(f) => {
+          setError("");
+          setFotos((lama) => (lama.length < MAKS_FOTO ? [...lama, f] : lama));
+        }}
+        onError={setError}
+      />
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => kamera.current?.click()}
-          disabled={fotos.length >= MAKS_FOTO || memproses}
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold disabled:opacity-50"
-        >
-          <Camera className="w-5 h-5" /> Ambil Foto
-        </button>
-        <button
-          type="button"
-          onClick={() => galeri.current?.click()}
-          disabled={fotos.length >= MAKS_FOTO || memproses}
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold disabled:opacity-50"
-        >
-          <Picture className="w-5 h-5" /> Dari Galeri
-        </button>
-      </div>
-
-      {(fotos.length > 0 || memproses) && (
+      {fotos.length > 0 && (
         <div className="mt-4">
           <div className="flex gap-2 overflow-x-auto">
             {fotos.map((f, i) => (
@@ -234,9 +197,6 @@ function FormBukti({ sesiId, poin, rentang }: { sesiId: string; poin: number; re
                 </button>
               </div>
             ))}
-            {memproses && (
-              <div className="w-24 h-24 shrink-0 rounded-xl bg-slate-200 animate-pulse" />
-            )}
           </div>
           <p className={`mt-1 text-[11px] ${muat ? "text-slate-400" : "text-red-500 font-medium"}`}>
             {fotos.length}/{MAKS_FOTO} foto · {totalKb} KB
@@ -250,7 +210,7 @@ function FormBukti({ sesiId, poin, rentang }: { sesiId: string; poin: number; re
       <button
         type="button"
         onClick={kirim}
-        disabled={fotos.length === 0 || !muat || mengirim || memproses}
+        disabled={fotos.length === 0 || !muat || mengirim}
         className="mt-6 h-14 w-full rounded-2xl bg-brand-600 font-bold text-white transition hover:bg-brand-700 disabled:opacity-50"
       >
         {mengirim ? "Mengirim…" : "Klaim Poin Jam Emas"}
