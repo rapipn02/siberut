@@ -1,6 +1,7 @@
 import { cronAtauOperator, tolakAkses } from "@/lib/authServer";
 import { getAdmin } from "@/lib/firebaseAdmin";
 import { buatBriefing } from "@/lib/briefingServer";
+import { ambilGiliran } from "@/lib/jadwalServer";
 
 const TIMEOUT_MS = 30_000;
 
@@ -16,6 +17,15 @@ export async function POST(request: Request) {
       { ok: false, error: "Layanan prediksi belum dikonfigurasi." },
       { status: 503 },
     );
+  }
+
+  // Pemanggilan otomatis dari tab operator: sekali per 14 menit untuk semua tab
+  // (tiap run ML menulis ulang 48 dokumen prakiraan). Tombol manual & cron tidak dibatasi.
+  const admin = getAdmin();
+  if (new URL(request.url).searchParams.has("otomatis") && admin) {
+    if (!(await ambilGiliran(admin.db, "prakiraan", 14 * 60_000))) {
+      return Response.json({ ok: true, dilewati: true });
+    }
   }
 
   const controller = new AbortController();
@@ -42,7 +52,6 @@ export async function POST(request: Request) {
     const data = await res.json();
 
     // Prakiraan baru → perbarui briefing Analis AI (dibatasi tiap 2 jam di dalamnya).
-    const admin = getAdmin();
     const briefing = admin
       ? await buatBriefing(admin.db).catch(() => "gagal" as const)
       : null;

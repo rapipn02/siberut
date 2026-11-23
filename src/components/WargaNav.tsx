@@ -6,28 +6,19 @@ import { useWarga } from "./WargaAuthProvider";
 import { useSaldo } from "@/hooks/useWargaData";
 import { BarChart, Gift, Home, LogOut, Star, User, Zap } from "./icons";
 
-const TAB = [
+/** Menu yang sama untuk bar bawah (HP) dan sidebar (laptop). */
+const MENU = [
   { href: "/warga", label: "Beranda", Icon: Home },
+  { href: "/warga/alat", label: "Alat Saya", Icon: Zap },
   { href: "/warga/analitik", label: "Analisis", Icon: BarChart },
   { href: "/warga/hadiah", label: "Hadiah", Icon: Gift },
   { href: "/warga/profil", label: "Profil", Icon: User },
 ];
 
-/** Menu desktop: sama dengan TAB, ditambah Alat Saya yang di HP dibuka dari Beranda. */
-const MENU_DESKTOP = [
-  TAB[0],
-  { href: "/warga/alat", label: "Alat Saya", Icon: Zap },
-  ...TAB.slice(1),
-];
-
-function aktifDi(pathname: string, href: string, desktop: boolean) {
+function aktifDi(pathname: string, href: string) {
   if (href !== "/warga") return pathname.startsWith(href);
-  // Di HP, detail sesi & Alat Saya bagian dari Beranda. Di desktop Alat Saya punya menu sendiri.
-  return (
-    pathname === "/warga" ||
-    pathname.startsWith("/warga/sesi") ||
-    (!desktop && pathname.startsWith("/warga/alat"))
-  );
+  // Detail sesi dibuka dari Beranda.
+  return pathname === "/warga" || pathname.startsWith("/warga/sesi");
 }
 
 /** HP & tablet: navigasi bawah. */
@@ -36,9 +27,9 @@ export default function WargaNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-md border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:max-w-3xl lg:hidden">
-      <ul className="grid grid-cols-4">
-        {TAB.map(({ href, label, Icon }) => {
-          const aktif = aktifDi(pathname, href, false);
+      <ul className="grid grid-cols-5">
+        {MENU.map(({ href, label, Icon }) => {
+          const aktif = aktifDi(pathname, href);
           return (
             <li key={href}>
               <Link
@@ -54,7 +45,7 @@ export default function WargaNav() {
                   <Icon className="w-5 h-5" />
                 </span>
                 <span
-                  className={`text-xs ${
+                  className={`whitespace-nowrap text-xs ${
                     aktif ? "font-bold text-slate-900" : "font-medium text-slate-500"
                   }`}
                 >
@@ -86,8 +77,8 @@ export function SidebarWarga() {
 
       <nav className="mt-2 flex-1 px-3 text-sm">
         <p className="mb-1 px-3 text-[11px] font-semibold tracking-wide text-slate-400">MENU</p>
-        {MENU_DESKTOP.map(({ href, label, Icon }) => {
-          const aktif = aktifDi(pathname, href, true);
+        {MENU.map(({ href, label, Icon }) => {
+          const aktif = aktifDi(pathname, href);
           return (
             <Link
               key={href}

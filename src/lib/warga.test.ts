@@ -67,6 +67,10 @@ describe("statusKirimBukti", () => {
   it("tidak boleh bila jadwal tanpa startAt/endAt", () => {
     expect(statusKirimBukti(sesi("a", "ACTIVE"), 3000).boleh).toBe(false);
   });
+
+  it("boleh begitu jam mulai lewat walau status belum diperbarui tick (masih UPCOMING)", () => {
+    expect(statusKirimBukti(sesi("a", "UPCOMING", 1000, 5000), 3000).boleh).toBe(true);
+  });
 });
 
 describe("urutSesiWarga", () => {

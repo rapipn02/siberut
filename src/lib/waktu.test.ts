@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { jamWib, kunciTanggalWib, tanggalPanjangWib, tanggalWib } from "./waktu";
+import { jamWib, kunciTanggalWib, sudahWaktunya, tanggalPanjangWib, tanggalWib } from "./waktu";
 
 // 2026-11-19 08:05 UTC = 15:05 WIB
 const T = new Date("2026-11-19T08:05:00Z");
@@ -22,5 +22,19 @@ describe("waktu WIB", () => {
 
   it("tanggalWib bentuk singkat", () => {
     expect(tanggalWib(T)).toBe("19 Nov 2026");
+  });
+});
+
+describe("sudahWaktunya (giliran pekerjaan berat di server)", () => {
+  const MENIT = 60_000;
+  it("belum pernah jalan → boleh", () => {
+    expect(sudahWaktunya(undefined, 0, 5 * MENIT)).toBe(true);
+  });
+  it("baru jalan 2 menit lalu dengan jeda 4 menit → lewati", () => {
+    expect(sudahWaktunya(0, 2 * MENIT, 4 * MENIT)).toBe(false);
+  });
+  it("tepat atau lewat jeda → boleh", () => {
+    expect(sudahWaktunya(0, 4 * MENIT, 4 * MENIT)).toBe(true);
+    expect(sudahWaktunya(0, 30 * MENIT, 4 * MENIT)).toBe(true);
   });
 });

@@ -22,7 +22,7 @@ export default function HadiahWargaPage() {
   const { warga } = useWarga();
   const { poin } = useSaldo(warga?.uid);
   const { items, loading } = useRewardCatalog();
-  const { stok, loading: memuatStok, muatUlang: muatUlangStok } = useStokHadiah();
+  const { stok, loading: memuatStok, gagal: stokGagal, muatUlang: muatUlangStok } = useStokHadiah();
   const [dipilih, setDipilih] = useState<RewardCatalogItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [hasil, setHasil] = useState<Hasil | null>(null);
@@ -85,6 +85,17 @@ export default function HadiahWargaPage() {
       <section className="space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 xl:grid-cols-3">
         {loading || memuatStok ? (
           <div className="h-24 rounded-[20px] bg-slate-200/70 animate-pulse" />
+        ) : stokGagal ? (
+          <div className="rounded-2xl bg-white p-5 text-[13px] text-slate-600 shadow-sm md:col-span-2 xl:col-span-3 lg:rounded-xl lg:border lg:border-slate-200 lg:shadow-none">
+            Stok hadiah sedang tidak bisa dimuat. Coba lagi beberapa saat lagi.
+            <button
+              type="button"
+              onClick={muatUlangStok}
+              className="mt-3 block rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white"
+            >
+              Muat ulang
+            </button>
+          </div>
         ) : katalog.length === 0 ? (
           <Kosong>Katalog hadiah masih kosong.</Kosong>
         ) : (

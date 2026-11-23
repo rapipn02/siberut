@@ -3,6 +3,7 @@ import { getAdmin } from "@/lib/firebaseAdmin";
 import { cronAtauOperator, tolakAkses } from "@/lib/authServer";
 import { ringkasDampak } from "@/lib/fuel";
 import { hitungStatistikTerkini } from "@/lib/statistikServer";
+import { ambilGiliran } from "@/lib/jadwalServer";
 
 export async function POST(request: Request) {
   if (!(await cronAtauOperator(request))) return tolakAkses();
@@ -18,6 +19,11 @@ export async function POST(request: Request) {
   const sekarang = Date.now();
 
   try {
+    // Cron VPS (5 menit) dan tab operator memanggil route ini; cukup sekali per 4 menit.
+    if (!(await ambilGiliran(db, "tick", 4 * 60_000, sekarang))) {
+      return Response.json({ ok: true, dilewati: true });
+    }
+
     const fcSnap = await db
       .collection("power_forecasts")
       .where("timestamp", ">=", Timestamp.fromMillis(sekarang - 3600_000))
@@ -56,7 +62,10 @@ export async function POST(request: Request) {
       .doc("dampak")
       .set({ ...dampak, diperbarui: Timestamp.fromMillis(sekarang) });
     // Statistik iklim harian (hari ini + kemarin) untuk grafik hari/minggu/bulan.
-    await hitungStatistikTerkini(db, sekarang);
+    // Statistik harian membaca prakiraan 2 hari: cukup tiap 30 menit.
+    if (await ambilGiliran(db, "statistik", 30 * 60_000, sekarang)) {
+      await hitungStatistikTerkini(db, sekarang);
+    }
 
     const sesiSnap = await db.collection("load_shift_sessions").get();
     let jadiAktif = 0;

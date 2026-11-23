@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
-import { Timestamp, FieldValue } from "firebase-admin/firestore";
+import { Timestamp, FieldValue, type QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { getAdmin } from "@/lib/firebaseAdmin";
-import { cronAtauOperator, tolakAkses } from "@/lib/authServer";
+import { cronAtauOperator, tolakAkses, wargaDariToken } from "@/lib/authServer";
 import {
+  bolehDinilaiWarga,
   verifikasiBanyak,
   type JendelaImbauan,
   type KlaimTersetujui,
@@ -57,7 +58,19 @@ function sidikFoto(foto: unknown): string[] {
 }
 
 export async function POST(request: Request) {
-  if (!(await cronAtauOperator(request, true))) return tolakAkses();
+  // Cron/admin: semua antrean. Warga: hanya pengajuannya sendiri yang baru dikirim (dinilai langsung).
+  let pemilik: string | null = null;
+  if (!(await cronAtauOperator(request, true))) {
+    const warga = await wargaDariToken(request);
+    if (!warga) return tolakAkses();
+    pemilik = warga.uid;
+  }
+  const idTarget = pemilik
+    ? ((await request.json().catch(() => ({}))) as { id?: unknown }).id
+    : null;
+  if (pemilik && typeof idTarget !== "string") {
+    return Response.json({ ok: false, error: "id pengajuan wajib." }, { status: 400 });
+  }
 
   const admin = getAdmin();
   if (!admin) {
@@ -70,15 +83,23 @@ export async function POST(request: Request) {
   const sekarang = Date.now();
 
   try {
-    const menungguSnap = await db
-      .collection("participation_requests")
-      .where("status", "==", "PENDING")
-      .limit(MAKS_PER_JALAN)
-      .get();
-
-    // Sudah dinilai AI & menunggu keputusan operator → jangan dianalisis ulang.
-    // ponytail: >50 pengajuan tertahan bisa menyumbat antrean; tambah field status terpisah bila itu terjadi.
-    const menunggu = menungguSnap.docs.filter((d) => !d.data().aiAnalisis);
+    let menunggu: QueryDocumentSnapshot[];
+    if (pemilik && typeof idTarget === "string") {
+      const d = await db.collection("participation_requests").doc(idTarget).get();
+      menunggu =
+        d.exists && bolehDinilaiWarga(d.data() ?? {}, d.createTime?.toMillis() ?? 0, pemilik, sekarang)
+          ? [d as QueryDocumentSnapshot] // exists sudah dicek
+          : [];
+    } else {
+      const menungguSnap = await db
+        .collection("participation_requests")
+        .where("status", "==", "PENDING")
+        .limit(MAKS_PER_JALAN)
+        .get();
+      // Sudah dinilai AI & menunggu keputusan operator → jangan dianalisis ulang.
+      // ponytail: >50 pengajuan tertahan bisa menyumbat antrean; tambah field status terpisah bila itu terjadi.
+      menunggu = menungguSnap.docs.filter((d) => !d.data().aiAnalisis);
+    }
 
     if (menunggu.length === 0) {
       return Response.json({

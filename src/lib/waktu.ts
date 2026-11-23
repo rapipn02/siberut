@@ -35,3 +35,8 @@ export function kunciTanggalWib(d: Date): string {
   const a = bagian(d, { day: "2-digit", month: "2-digit", year: "numeric" });
   return `${a("year")}-${a("month")}-${a("day")}`;
 }
+
+/** Pekerjaan boleh jalan lagi bila belum pernah jalan atau jedanya sudah lewat. */
+export function sudahWaktunya(terakhirMs: number | undefined, sekarangMs: number, jedaMs: number): boolean {
+  return terakhirMs === undefined || sekarangMs - terakhirMs >= jedaMs;
+}

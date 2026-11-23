@@ -119,6 +119,8 @@ export function useRiwayatTukar(uid: string | undefined) {
 export function useStokHadiah() {
   const [stok, setStok] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  // Gagal memuat ≠ stok habis: jangan sampai semua hadiah tampil "HABIS" saat server bermasalah.
+  const [gagal, setGagal] = useState(false);
   const [versi, setVersi] = useState(0);
 
   useEffect(() => {
@@ -126,9 +128,13 @@ export function useStokHadiah() {
     fetch("/api/stok-hadiah", { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
-        if (!batal && d?.ok) setStok(d.stok ?? {});
+        if (batal) return;
+        setGagal(!d?.ok);
+        if (d?.ok) setStok(d.stok ?? {});
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!batal) setGagal(true);
+      })
       .finally(() => {
         if (!batal) setLoading(false);
       });
@@ -137,8 +143,11 @@ export function useStokHadiah() {
     };
   }, [versi]);
 
-  const muatUlang = useCallback(() => setVersi((v) => v + 1), []);
-  return { stok, loading, muatUlang };
+  const muatUlang = useCallback(() => {
+    setLoading(true);
+    setVersi((v) => v + 1);
+  }, []);
+  return { stok, loading, gagal, muatUlang };
 }
 
 /** Daftar "Alat Saya" milik warga (`users/{uid}/alat`). */

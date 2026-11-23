@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  bolehDinilaiWarga,
   verifikasi,
   verifikasiBanyak,
   type JendelaImbauan,
@@ -270,5 +271,23 @@ describe("waktu kirim dipalsukan", () => {
 
   it("tanpa waktu server (data lama) tetap dinilai seperti sebelumnya", () => {
     expect(verifikasi(ajukan(), jendela, [], SEKARANG).status).toBe("APPROVED");
+  });
+});
+
+describe("bolehDinilaiWarga (verifikasi langsung setelah warga klaim)", () => {
+  const MENIT = 60_000;
+  const baru = { userId: "u1", status: "PENDING" };
+  it("pemilik, masih PENDING, belum dinilai, baru dibuat → boleh", () => {
+    expect(bolehDinilaiWarga(baru, 0, "u1", 30_000)).toBe(true);
+  });
+  it("milik warga lain → tidak", () => {
+    expect(bolehDinilaiWarga(baru, 0, "u2", 30_000)).toBe(false);
+  });
+  it("sudah diputuskan atau sudah dinilai AI → tidak (tidak memanggil AI lagi)", () => {
+    expect(bolehDinilaiWarga({ ...baru, status: "APPROVED" }, 0, "u1", 30_000)).toBe(false);
+    expect(bolehDinilaiWarga({ ...baru, aiAnalisis: {} }, 0, "u1", 30_000)).toBe(false);
+  });
+  it("lebih dari 2 menit setelah dibuat → tidak (sisanya diurus cron)", () => {
+    expect(bolehDinilaiWarga(baru, 0, "u1", 2 * MENIT + 1)).toBe(false);
   });
 });

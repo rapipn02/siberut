@@ -28,7 +28,9 @@ export function statusKirimBukti(
   if (sesi.status === "ENDED" || sekarangMs > selesai) {
     return { boleh: false, alasan: "Sesi sudah berakhir." };
   }
-  if (sesi.status === "UPCOMING" || sekarangMs < mulai) {
+  // Ikut jam, bukan status: status UPCOMING→ACTIVE baru diperbarui tick tiap ±5 menit,
+  // sedangkan server verifikasi juga menilai berdasarkan jam sesi.
+  if (sekarangMs < mulai) {
     return { boleh: false, alasan: `Sesi dibuka pukul ${sesi.startTime} WIB.` };
   }
   return { boleh: true, alasan: "" };

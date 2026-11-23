@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { fetchBertoken } from "@/lib/apiKlien";
 
-const JEDA_MS = 60_000;
+// Server tetap membatasi sekali per 4 menit untuk semua tab (lihat jadwalServer).
+const JEDA_MS = 5 * 60_000;
 
 export function useSessionTick() {
   useEffect(() => {
@@ -26,7 +27,7 @@ export function useForecastRefresh() {
   useEffect(() => {
     const jalankan = () => {
       if (document.hidden) return;
-      fetchBertoken("/api/forecast/refresh", { method: "POST" }).catch(() => {});
+      fetchBertoken("/api/forecast/refresh?otomatis=1", { method: "POST" }).catch(() => {});
     };
     const awal = setTimeout(jalankan, 0);
     const id = setInterval(jalankan, JEDA_PRAKIRAAN_MS);

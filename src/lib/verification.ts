@@ -163,3 +163,25 @@ export function verifikasiBanyak(
 
   return keluaran;
 }
+
+/** Warga boleh memicu penilaian langsung hanya dalam 2 menit setelah klaim; sesudahnya cron yang menilai. */
+export const JENDELA_NILAI_WARGA_MS = 2 * 60_000;
+
+/**
+ * Syarat warga memicu verifikasi langsung untuk satu pengajuan: miliknya sendiri,
+ * masih PENDING, belum pernah dinilai AI, dan baru dibuat. Mencegah warga
+ * memanggil AI berulang-ulang atas pengajuan yang sama (hemat kuota Gemini).
+ */
+export function bolehDinilaiWarga(
+  data: { userId?: unknown; status?: unknown; aiAnalisis?: unknown },
+  dibuatMs: number,
+  uid: string,
+  sekarangMs: number,
+): boolean {
+  return (
+    data.userId === uid &&
+    data.status === "PENDING" &&
+    !data.aiAnalisis &&
+    sekarangMs - dibuatMs <= JENDELA_NILAI_WARGA_MS
+  );
+}

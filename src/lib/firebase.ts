@@ -1,6 +1,6 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,6 +21,11 @@ if (isFirebaseConfigured) {
   _app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   _auth = getAuth(_app);
   _db = getFirestore(_app);
+  // Hanya untuk rekaman/uji lokal dengan Firebase Emulator (tanpa kuota). Produksi tidak menyetel flag ini.
+  if (process.env.NEXT_PUBLIC_FIREBASE_EMULATOR === "1") {
+    connectAuthEmulator(_auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    connectFirestoreEmulator(_db, "127.0.0.1", 8085);
+  }
 }
 
 export const auth = _auth as Auth;

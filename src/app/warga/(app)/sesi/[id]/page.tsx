@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { fetchBertoken } from "@/lib/apiKlien";
 import { useWarga } from "@/components/WargaAuthProvider";
 import { useSessions } from "@/hooks/useSessions";
 import { useRiwayatKontribusi } from "@/hooks/useWargaData";
@@ -102,7 +103,7 @@ export default function DetailSesiPage() {
           <Info hijau>Poin sesi ini sudah Anda terima. Terima kasih!</Info>
         ) : klaim === "menunggu" ? (
           <Info>
-            Bukti Anda sedang diverifikasi. Poin masuk otomatis dalam ±5 menit.
+            Mata AI sedang memeriksa foto Anda. Biasanya selesai dalam beberapa detik.
           </Info>
         ) : klaim === "ditinjau" ? (
           <Info>
@@ -141,7 +142,7 @@ function FormBukti({ sesiId, poin, rentang }: { sesiId: string; poin: number; re
     setMengirim(true);
     setError("");
     try {
-      await addDoc(collection(db, "participation_requests"), {
+      const ref = await addDoc(collection(db, "participation_requests"), {
         userId: warga.uid,
         userName: warga.nama,
         timestamp: serverTimestamp(),
@@ -150,6 +151,11 @@ function FormBukti({ sesiId, poin, rentang }: { sesiId: string; poin: number; re
         status: "PENDING",
       });
       setFotos([]);
+      // Minta Mata AI menilai sekarang juga; bila gagal (sinyal putus), cron 5 menit tetap menilainya.
+      fetchBertoken("/api/verify-participation", {
+        method: "POST",
+        body: JSON.stringify({ id: ref.id }),
+      }).catch(() => {});
       // Setelah terkirim, riwayat menampilkan PENDING dan halaman beralih
       // ke pesan "sedang diverifikasi" dengan sendirinya.
     } catch {
