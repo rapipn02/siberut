@@ -51,3 +51,7 @@ context.md
 CLAUDE.md
 AGENTS.md
 .claude/
+
+# semua dokumen markdown tidak ikut repo, kecuali README (wajib ada untuk panitia)
+*.md
+!README.md
